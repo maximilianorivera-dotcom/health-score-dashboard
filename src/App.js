@@ -98,18 +98,18 @@ const fmtPct = n => n != null ? `${n > 0 ? "+" : ""}${n}%` : "—";
 
 // ── Freshness config ─────────────────────────────────────────────
 const FRESH = {
-  verde:     { bg:"#0b3d2b", fg:"#6ee7b7", dot:"#34d399", label:"Fresco",    desc:"Datos actualizados hace < 30 días" },
-  amarillo:  { bg:"#3d350b", fg:"#fde68a", dot:"#fbbf24", label:"Tibio",     desc:"Última actualización: 30-60 días" },
-  rojo:      { bg:"#3d0b14", fg:"#fca5a5", dot:"#ef4444", label:"Stale",     desc:"Datos con > 60 días de antigüedad" },
-  sin_fecha: { bg:"#252525", fg:"#9ca3af", dot:"#6b7280", label:"Sin fecha", desc:"No hay fecha de referencia" },
+  verde:     { bg:"#dcfce7", fg:"#15803d", dot:"#16a34a", label:"Fresco",    desc:"Datos actualizados hace < 30 días" },
+  amarillo:  { bg:"#fef9c3", fg:"#a16207", dot:"#ca8a04", label:"Tibio",     desc:"Última actualización: 30-60 días" },
+  rojo:      { bg:"#fee2e2", fg:"#b91c1c", dot:"#dc2626", label:"Stale",     desc:"Datos con > 60 días de antigüedad" },
+  sin_fecha: { bg:"#f3f4f6", fg:"#6b7280", dot:"#9ca3af", label:"Sin fecha", desc:"No hay fecha de referencia" },
 };
 
 const MOM_C = {
-  5:{bg:"#0b3d2b",fg:"#6ee7b7",accent:"#34d399"},
-  4:{bg:"#0c3326",fg:"#86efac",accent:"#4ade80"},
-  3:{bg:"#252525",fg:"#d1d5db",accent:"#9ca3af"},
-  2:{bg:"#3d2a0b",fg:"#fdba74",accent:"#f97316"},
-  1:{bg:"#3d0b14",fg:"#fca5a5",accent:"#ef4444"},
+  5:{bg:"#dcfce7",fg:"#15803d",accent:"#16a34a"},
+  4:{bg:"#f0fdf4",fg:"#166534",accent:"#22c55e"},
+  3:{bg:"#f3f4f6",fg:"#374151",accent:"#6b7280"},
+  2:{bg:"#fff7ed",fg:"#9a3412",accent:"#f97316"},
+  1:{bg:"#fee2e2",fg:"#991b1b",accent:"#ef4444"},
 };
 
 // ── Tooltip component ────────────────────────────────────────────
@@ -274,14 +274,14 @@ function FreshnessTooltip({ c }) {
 
 // ── Index mini gauge ─────────────────────────────────────────────
 function IndexDot({ value }) {
-  if (value == null) return <span style={{ color:"#3a3a3a", fontSize:13 }}>—</span>;
+  if (value == null) return <span style={{ color:"#d1d5db", fontSize:13 }}>—</span>;
   const color = value >= 8 ? "#34d399" : value >= 6 ? "#60a5fa" : value >= 4 ? "#fbbf24" : "#ef4444";
   const pct = Math.min(value/10, 1);
   return (
     <div style={{ display:"flex", alignItems:"center", gap:8, minWidth:80 }}>
       <div style={{ width:36, height:36, position:"relative" }}>
         <svg width={36} height={36} viewBox="0 0 36 36" style={{ transform:"rotate(-90deg)" }}>
-          <circle cx={18} cy={18} r={14} fill="none" stroke="#1a1a1a" strokeWidth={3}/>
+          <circle cx={18} cy={18} r={14} fill="none" stroke="#e5e7eb" strokeWidth={3}/>
           <circle cx={18} cy={18} r={14} fill="none" stroke={color} strokeWidth={3}
             strokeDasharray={`${87.96*pct} ${87.96*(1-pct)}`}
             strokeLinecap="round"
@@ -297,7 +297,7 @@ function IndexDot({ value }) {
 
 // ── Momentum badge ───────────────────────────────────────────────
 function MomentumBadge({ score, symbol, label }) {
-  if (score == null) return <span style={{ color:"#3a3a3a", fontSize:13 }}>—</span>;
+  if (score == null) return <span style={{ color:"#d1d5db", fontSize:13 }}>—</span>;
   const mc = MOM_C[score];
   return (
     <div style={{ display:"inline-flex", alignItems:"center", gap:6, padding:"4px 10px", borderRadius:6, background:mc.bg }}>
@@ -309,7 +309,7 @@ function MomentumBadge({ score, symbol, label }) {
 
 // ── Freshness badge ──────────────────────────────────────────────
 function FreshBadge({ freshness }) {
-  if (!freshness) return <span style={{ color:"#3a3a3a", fontSize:13 }}>—</span>;
+  if (!freshness) return <span style={{ color:"#d1d5db", fontSize:13 }}>—</span>;
   const f = FRESH[freshness];
   return (
     <span style={{ display:"inline-flex", alignItems:"center", gap:4, padding:"3px 9px", borderRadius:99, background:f.bg, color:f.fg, fontSize:11, fontWeight:500 }}>
@@ -411,14 +411,14 @@ export default function HealthDashboard() {
   }, [data, selectedCSM]);
 
   if (loading) return (
-    <div style={{ minHeight:"100vh", background:"#08080d", display:"flex", alignItems:"center", justifyContent:"center", flexDirection:"column" }}>
-      <div style={{ width:40, height:40, borderRadius:"50%", border:"3px solid #1a1a2a", borderTopColor:"#c9a96e", animation:"spin 0.8s linear infinite" }}/>
+    <div style={{ minHeight:"100vh", background:"#f9fafb", display:"flex", alignItems:"center", justifyContent:"center", flexDirection:"column" }}>
+      <div style={{ width:40, height:40, borderRadius:"50%", border:"3px solid #e5e7eb", borderTopColor:"#c9a96e", animation:"spin 0.8s linear infinite" }}/>
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
     </div>
   );
 
   if (error) return (
-    <div style={{ minHeight:"100vh", background:"#08080d", display:"flex", alignItems:"center", justifyContent:"center" }}>
+    <div style={{ minHeight:"100vh", background:"#f9fafb", display:"flex", alignItems:"center", justifyContent:"center" }}>
       <p style={{ color:"#ef4444" }}>Error: {error}</p>
     </div>
   );
@@ -442,18 +442,18 @@ export default function HealthDashboard() {
         @keyframes fadeIn { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
         @keyframes slideIn { from{opacity:0;transform:translateX(-8px)} to{opacity:1;transform:translateX(0)} }
         *::-webkit-scrollbar{width:6px;height:6px}
-        *::-webkit-scrollbar-track{background:#08080d}
-        *::-webkit-scrollbar-thumb{background:#2a2a3a;border-radius:3px}
-        *::-webkit-scrollbar-thumb:hover{background:#3a3a4a}
+        *::-webkit-scrollbar-track{background:#f3f4f6}
+        *::-webkit-scrollbar-thumb{background:#d1d5db;border-radius:3px}
+        *::-webkit-scrollbar-thumb:hover{background:#9ca3af}
       `}</style>
 
       {/* ── Left sidebar: CSM list ─────────────────────────────── */}
       <aside style={S.sidebar}>
         <div style={S.sidebarHeader}>
           <span style={{ color:"#c9a96e", fontSize:18 }}>⬡</span>
-          <span style={{ fontWeight:700, fontSize:15, color:"#e5e7eb", letterSpacing:-0.3 }}>Health Score</span>
+          <span style={{ fontWeight:700, fontSize:15, color:"#111827", letterSpacing:-0.3 }}>Health Score</span>
         </div>
-        <div style={{ padding:"0 12px 12px", fontSize:10, color:"#4b5563", fontFamily:"'JetBrains Mono',monospace", textTransform:"uppercase", letterSpacing:0.5 }}>
+        <div style={{ padding:"0 12px 12px", fontSize:10, color:"#9ca3af", fontFamily:"'JetBrains Mono',monospace", textTransform:"uppercase", letterSpacing:0.5 }}>
           Success Managers
         </div>
         <nav style={{ flex:1, overflowY:"auto", padding:"0 8px" }}>
@@ -462,19 +462,19 @@ export default function HealthDashboard() {
             return (
               <button key={csm.name} onClick={() => setSelectedCSM(csm.name)} style={{
                 ...S.csmBtn,
-                background: active ? "#141420" : "transparent",
+                background: active ? "#eff6ff" : "transparent",
                 borderLeft: active ? "2px solid #c9a96e" : "2px solid transparent",
                 animation: `slideIn 0.3s ease ${i*0.04}s both`,
               }}>
                 <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
-                  <span style={{ fontWeight: active ? 600 : 400, color: active ? "#e5e7eb" : "#9ca3af", fontSize:13 }}>
+                  <span style={{ fontWeight: active ? 600 : 400, color: active ? "#111827" : "#6b7280", fontSize:13 }}>
                     {csm.name}
                   </span>
                   <span style={{ fontFamily:"'JetBrains Mono',monospace", fontSize:10, color:"#6b7280" }}>
                     {csm.count}
                   </span>
                 </div>
-                <div style={{ fontSize:11, color:"#4b5563", fontFamily:"'JetBrains Mono',monospace", marginTop:2 }}>
+                <div style={{ fontSize:11, color:"#9ca3af", fontFamily:"'JetBrains Mono',monospace", marginTop:2 }}>
                   {fmtCLP(csm.mrr)}
                 </div>
               </button>
@@ -482,7 +482,7 @@ export default function HealthDashboard() {
           })}
         </nav>
         <div style={S.sidebarFooter}>
-          <div style={{ fontSize:10, color:"#4b5563" }}>
+          <div style={{ fontSize:10, color:"#9ca3af" }}>
             {!WEBHOOK_URL ? "MOCK DATA" : "LIVE"} · {data.length} cuentas
           </div>
         </div>
@@ -530,13 +530,13 @@ export default function HealthDashboard() {
             <tbody>
               {clients.map((c, i) => (
                 <tr key={c.client_id} style={{ ...S.tr, animation:`fadeIn 0.3s ease ${i*0.03}s both` }}
-                    onMouseOver={e => { e.currentTarget.style.background="#0e0e18"; }}
+                    onMouseOver={e => { e.currentTarget.style.background="#f0f4f8"; }}
                     onMouseOut={e => { e.currentTarget.style.background="transparent"; }}>
                   <td style={{ ...S.td, maxWidth:220 }}>
-                    <div style={{ fontWeight:600, color:"#e5e7eb", fontSize:13, whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{c.client_name}</div>
-                    <div style={{ fontSize:10, color:"#4b5563", marginTop:1 }}>{c.plan} · {c.country}</div>
+                    <div style={{ fontWeight:600, color:"#111827", fontSize:13, whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{c.email}</div>
+                    <div style={{ fontSize:10, color:"#6b7280", marginTop:1 }}>{c.plan} · {c.country}</div>
                   </td>
-                  <td style={{ ...S.td, textAlign:"right", fontFamily:"'JetBrains Mono',monospace", fontSize:13, fontWeight:500, color:"#e5e7eb" }}>
+                  <td style={{ ...S.td, textAlign:"right", fontFamily:"'JetBrains Mono',monospace", fontSize:13, fontWeight:500, color:"#111827" }}>
                     {fmtCLP(c.mrr)}
                   </td>
                   <td style={{ ...S.td, textAlign:"center" }}>
@@ -557,7 +557,7 @@ export default function HealthDashboard() {
                 </tr>
               ))}
               {clients.length === 0 && (
-                <tr><td colSpan={5} style={{ ...S.td, textAlign:"center", color:"#4b5563", padding:40 }}>
+                <tr><td colSpan={5} style={{ ...S.td, textAlign:"center", color:"#9ca3af", padding:40 }}>
                   {search ? "Sin resultados" : "Sin clientes asignados"}
                 </td></tr>
               )}
@@ -572,11 +572,11 @@ export default function HealthDashboard() {
 // ── Styles ────────────────────────────────────────────────────────
 const S = {
   root: {
-    display:"flex", minHeight:"100vh", background:"#08080d", color:"#e5e7eb",
+    display:"flex", minHeight:"100vh", background:"#f9fafb", color:"#111827",
     fontFamily:"'Outfit', sans-serif",
   },
   sidebar: {
-    width:240, minWidth:240, background:"#0b0b12", borderRight:"1px solid #16162a",
+    width:240, minWidth:240, background:"#ffffff", borderRight:"1px solid #e5e7eb",
     display:"flex", flexDirection:"column", position:"sticky", top:0, height:"100vh",
     overflowY:"auto",
   },
@@ -589,43 +589,43 @@ const S = {
     display:"block", fontFamily:"inherit",
   },
   sidebarFooter: {
-    padding:"12px 16px", borderTop:"1px solid #16162a",
+    padding:"12px 16px", borderTop:"1px solid #e5e7eb",
   },
   main: {
     flex:1, padding:"24px 32px", overflowY:"auto", maxHeight:"100vh",
   },
   header: {
     display:"flex", justifyContent:"space-between", alignItems:"flex-end",
-    marginBottom:20, paddingBottom:16, borderBottom:"1px solid #16162a",
+    marginBottom:20, paddingBottom:16, borderBottom:"1px solid #e5e7eb",
   },
   title: {
-    margin:0, fontSize:24, fontWeight:700, color:"#f3f4f6", letterSpacing:-0.3,
+    margin:0, fontSize:24, fontWeight:700, color:"#111827", letterSpacing:-0.3,
   },
   subtitle: {
     margin:"4px 0 0", fontSize:13, color:"#6b7280",
     fontFamily:"'JetBrains Mono',monospace",
   },
   kpi: {
-    background:"#0e0e18", borderRadius:8, padding:"10px 16px", minWidth:100, textAlign:"center",
+    background:"#f3f4f6", borderRadius:8, padding:"10px 16px", minWidth:100, textAlign:"center",
   },
   search: {
-    background:"#0e0e18", border:"1px solid #1e1e32", borderRadius:8,
-    padding:"8px 14px", color:"#e5e7eb", fontSize:13, width:260,
+    background:"#ffffff", border:"1px solid #e5e7eb", borderRadius:8,
+    padding:"8px 14px", color:"#111827", fontSize:13, width:260,
     fontFamily:"'Outfit',sans-serif", outline:"none", transition:"border-color 0.2s",
   },
   tableWrap: {
-    borderRadius:10, border:"1px solid #16162a", overflow:"hidden",
+    borderRadius:10, border:"1px solid #e5e7eb", overflow:"hidden",
   },
   table: {
     width:"100%", borderCollapse:"collapse",
   },
   th: {
     padding:"12px 16px", fontSize:10, fontFamily:"'JetBrains Mono',monospace",
-    textTransform:"uppercase", letterSpacing:0.8, background:"#0b0b12",
-    borderBottom:"1px solid #16162a", fontWeight:500, whiteSpace:"nowrap",
+    textTransform:"uppercase", letterSpacing:0.8, background:"#f9fafb",
+    borderBottom:"1px solid #e5e7eb", fontWeight:500, whiteSpace:"nowrap",
   },
   tr: {
-    borderBottom:"1px solid #0e0e18", transition:"background 0.15s", cursor:"default",
+    borderBottom:"1px solid #f3f4f6", transition:"background 0.15s", cursor:"default",
   },
   td: {
     padding:"12px 16px", verticalAlign:"middle",
