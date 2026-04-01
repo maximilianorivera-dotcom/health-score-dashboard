@@ -302,9 +302,8 @@ function MomentumBadge({ score, symbol, label }) {
   if (score == null) return <span style={{ color:"#d1d5db", fontSize:13 }}>—</span>;
   const mc = MOM_C[score];
   return (
-    <div style={{ display:"inline-flex", alignItems:"center", gap:6, padding:"4px 10px", borderRadius:6, background:mc.bg }}>
+    <div style={{ display:"inline-flex", alignItems:"center", padding:"4px 10px", borderRadius:6, background:mc.bg }}>
       <span style={{ fontSize:16, color:mc.accent, lineHeight:1 }}>{symbol}</span>
-      <span style={{ fontSize:11, color:mc.fg, fontWeight:500 }}>{label}</span>
     </div>
   );
 }
