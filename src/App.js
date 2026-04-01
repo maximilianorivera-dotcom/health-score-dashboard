@@ -13,7 +13,7 @@ import { useState, useEffect, useMemo, useCallback, useRef } from "react";
  * ═══════════════════════════════════════════════════════════════
  */
 
-const WEBHOOK_URL = "https://app.n8n.vambe.me/webhook/health-score";
+const WEBHOOK_URL = "https://n8n.vambe.me/webhook/health-score";
 
 // ── Mock data ────────────────────────────────────────────────────
 function mockData() {
