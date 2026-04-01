@@ -525,6 +525,7 @@ export default function HealthDashboard() {
                 <SortHeader label="Cliente" sortId="name" align="left"/>
                 <SortHeader label="MRR" sortId="mrr" align="right"/>
                 <SortHeader label="Index" sortId="index"/>
+                <SortHeader label="Freshness" sortId="freshness"/>
                 <SortHeader label="Momentum" sortId="momentum"/>
               </tr>
             </thead>
@@ -533,27 +534,28 @@ export default function HealthDashboard() {
                 <tr key={c.client_id} style={{ ...S.tr, animation:`fadeIn 0.3s ease ${i*0.03}s both` }}
                     onMouseOver={e => { e.currentTarget.style.background="#f0f4f8"; }}
                     onMouseOut={e => { e.currentTarget.style.background="transparent"; }}>
-                  <td style={{ ...S.td, maxWidth:220 }}>
+                  <td style={{ ...S.td, maxWidth:240 }}>
                     <a href={c.backofficeUrl} target="_blank" rel="noopener noreferrer"
                        style={{ fontWeight:600, color:"#111827", fontSize:13, textDecoration:"none", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis", display:"block" }}
                        onMouseOver={e => e.target.style.color="#c9a96e"}
                        onMouseOut={e => e.target.style.color="#111827"}>
                       {c.client_name}
                     </a>
+                    <div style={{ fontSize:10, color:"#9ca3af", marginTop:1 }}>{c.email}</div>
                     <div style={{ fontSize:10, color:"#6b7280", marginTop:1 }}>{c.plan} · {c.country}</div>
                   </td>
                   <td style={{ ...S.td, textAlign:"right", fontFamily:"'JetBrains Mono',monospace", fontSize:13, fontWeight:500, color:"#111827" }}>
                     {fmtCLP(c.mrr)}
                   </td>
                   <td style={{ ...S.td, textAlign:"center" }}>
-                    <div style={{ display:"flex", alignItems:"center", justifyContent:"center", gap:8 }}>
-                      <Tooltip content={<IndexTooltip c={c}/>} width={260}>
-                        <IndexDot value={c.index_score}/>
-                      </Tooltip>
-                      <Tooltip content={<FreshnessTooltip c={c}/>} width={280}>
-                        <FreshBadge freshness={c.freshness}/>
-                      </Tooltip>
-                    </div>
+                    <Tooltip content={<IndexTooltip c={c}/>} width={260}>
+                      <IndexDot value={c.index_score}/>
+                    </Tooltip>
+                  </td>
+                  <td style={{ ...S.td, textAlign:"center" }}>
+                    <Tooltip content={<FreshnessTooltip c={c}/>} width={280}>
+                      <FreshBadge freshness={c.freshness}/>
+                    </Tooltip>
                   </td>
                   <td style={{ ...S.td, textAlign:"center" }}>
                     <Tooltip content={<MomentumTooltip c={c}/>} width={300}>
@@ -563,7 +565,7 @@ export default function HealthDashboard() {
                 </tr>
               ))}
               {clients.length === 0 && (
-                <tr><td colSpan={5} style={{ ...S.td, textAlign:"center", color:"#9ca3af", padding:40 }}>
+                <tr><td colSpan={6} style={{ ...S.td, textAlign:"center", color:"#9ca3af", padding:40 }}>
                   {search ? "Sin resultados" : "Sin clientes asignados"}
                 </td></tr>
               )}
