@@ -93,6 +93,7 @@ function mockData() {
 
 // ── Formatting ───────────────────────────────────────────────────
 const fmtCLP = n => n != null ? `$${n.toLocaleString("es-CL")}` : "—";
+// eslint-disable-next-line no-unused-vars
 const fmtPct = n => n != null ? `${n > 0 ? "+" : ""}${n}%` : "—";
 
 // ── Freshness config ─────────────────────────────────────────────
