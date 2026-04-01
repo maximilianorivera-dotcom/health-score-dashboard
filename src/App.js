@@ -535,7 +535,12 @@ export default function HealthDashboard() {
                     onMouseOver={e => { e.currentTarget.style.background="#f0f4f8"; }}
                     onMouseOut={e => { e.currentTarget.style.background="transparent"; }}>
                   <td style={{ ...S.td, maxWidth:220 }}>
-                    <div style={{ fontWeight:600, color:"#111827", fontSize:13, whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{c.email}</div>
+                    <a href={c.backofficeUrl} target="_blank" rel="noopener noreferrer"
+                       style={{ fontWeight:600, color:"#111827", fontSize:13, textDecoration:"none", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis", display:"block" }}
+                       onMouseOver={e => e.target.style.color="#c9a96e"}
+                       onMouseOut={e => e.target.style.color="#111827"}>
+                      {c.client_name}
+                    </a>
                     <div style={{ fontSize:10, color:"#6b7280", marginTop:1 }}>{c.plan} · {c.country}</div>
                   </td>
                   <td style={{ ...S.td, textAlign:"right", fontFamily:"'JetBrains Mono',monospace", fontSize:13, fontWeight:500, color:"#111827" }}>
