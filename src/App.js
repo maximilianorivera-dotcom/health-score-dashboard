@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
+import { createPortal } from "react-dom";
 
 /*
  * ═══════════════════════════════════════════════════════════════
@@ -138,12 +139,12 @@ function Tooltip({ children, content, width = 280 }) {
       style={{ position: "relative", cursor: "default" }}
     >
       {children}
-      {show && (
+      {show && createPortal(
         <div ref={tipRef} style={{
           position:"fixed", left:pos.x, top:pos.y, transform:"translate(-50%, -100%)",
           width, background:"#1a1a28", border:"1px solid #2d2d44", borderRadius:10,
           padding:"14px 16px", zIndex:9999, boxShadow:"0 12px 40px rgba(0,0,0,0.6)",
-          pointerEvents:"none",
+          pointerEvents:"none", opacity:1,
         }}>
           {content}
           <div style={{
@@ -151,7 +152,8 @@ function Tooltip({ children, content, width = 280 }) {
             width:12, height:12, background:"#1a1a28", borderRight:"1px solid #2d2d44",
             borderBottom:"1px solid #2d2d44",
           }}/>
-        </div>
+        </div>,
+        document.body
       )}
     </span>
   );
