@@ -280,7 +280,7 @@ function IndexDot({ value }) {
   const color = value >= 8 ? "#34d399" : value >= 6 ? "#60a5fa" : value >= 4 ? "#fbbf24" : "#ef4444";
   const pct = Math.min(value/10, 1);
   return (
-    <div style={{ display:"flex", alignItems:"center", gap:8, minWidth:80 }}>
+    <div style={{ display:"flex", alignItems:"center", justifyContent:"center", gap:8 }}>
       <div style={{ width:36, height:36, position:"relative" }}>
         <svg width={36} height={36} viewBox="0 0 36 36" style={{ transform:"rotate(-90deg)" }}>
           <circle cx={18} cy={18} r={14} fill="none" stroke="#e5e7eb" strokeWidth={3}/>
