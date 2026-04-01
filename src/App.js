@@ -526,7 +526,6 @@ export default function HealthDashboard() {
                 <SortHeader label="MRR" sortId="mrr" align="right"/>
                 <SortHeader label="Index" sortId="index"/>
                 <SortHeader label="Momentum" sortId="momentum"/>
-                <SortHeader label="Freshness" sortId="freshness"/>
               </tr>
             </thead>
             <tbody>
@@ -547,18 +546,18 @@ export default function HealthDashboard() {
                     {fmtCLP(c.mrr)}
                   </td>
                   <td style={{ ...S.td, textAlign:"center" }}>
-                    <Tooltip content={<IndexTooltip c={c}/>} width={260}>
-                      <IndexDot value={c.index_score}/>
-                    </Tooltip>
+                    <div style={{ display:"flex", alignItems:"center", justifyContent:"center", gap:8 }}>
+                      <Tooltip content={<IndexTooltip c={c}/>} width={260}>
+                        <IndexDot value={c.index_score}/>
+                      </Tooltip>
+                      <Tooltip content={<FreshnessTooltip c={c}/>} width={280}>
+                        <FreshBadge freshness={c.freshness}/>
+                      </Tooltip>
+                    </div>
                   </td>
                   <td style={{ ...S.td, textAlign:"center" }}>
                     <Tooltip content={<MomentumTooltip c={c}/>} width={300}>
                       <MomentumBadge score={c.momentum_score} symbol={c.momentum_symbol} label={c.momentum_label}/>
-                    </Tooltip>
-                  </td>
-                  <td style={{ ...S.td, textAlign:"center" }}>
-                    <Tooltip content={<FreshnessTooltip c={c}/>} width={280}>
-                      <FreshBadge freshness={c.freshness}/>
                     </Tooltip>
                   </td>
                 </tr>
