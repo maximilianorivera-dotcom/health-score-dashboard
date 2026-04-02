@@ -366,20 +366,21 @@ export default function HealthDashboard() {
     if (csms.length > 0 && selectedCSM === null) setSelectedCSM(csms[0].name);
   }, [csms, selectedCSM]);
 
-  const handleSort = useCallback((key, shift) => {
+  const handleSort = useCallback((key) => {
     setSortKeys(prev => {
       const idx = prev.findIndex(s => s.key === key);
-      if (shift) {
-        if (idx === 0) return prev; // primary stays primary
-        if (idx === 1) {
-          const next = [...prev];
-          next[1] = { key, dir: next[1].dir === "desc" ? "asc" : "desc" };
-          return next;
-        }
-        return [prev[0], { key, dir:"desc" }];
+      if (idx === 0) {
+        // Click primario: toggle dir, limpia secundario
+        return [{ key, dir: prev[0].dir === "desc" ? "asc" : "desc" }];
+      } else if (idx === 1) {
+        // Click secundario: toggle dir
+        const next = [...prev];
+        next[1] = { key, dir: prev[1].dir === "desc" ? "asc" : "desc" };
+        return next;
       } else {
-        if (idx === 0) return [{ key, dir: prev[0].dir === "desc" ? "asc" : "desc" }];
-        return [{ key, dir:"desc" }];
+        // Columna inactiva: si hay primario → agrega/reemplaza secundario, si no → primario
+        if (prev.length === 0) return [{ key, dir:"desc" }];
+        return [prev[0], { key, dir:"desc" }];
       }
     });
   }, []);
@@ -451,7 +452,7 @@ export default function HealthDashboard() {
     const active = idx >= 0;
     const dir = active ? sortKeys[idx].dir : "desc";
     return (
-      <th onClick={(e) => handleSort(sortId, e.shiftKey)} title={isSecondary ? "Orden secundario (Shift+Click para cambiar)" : "Click para ordenar · Shift+Click para orden secundario"} style={{ ...S.th, textAlign:align, cursor:"pointer", userSelect:"none", color: isPrimary ? "#c9a96e" : isSecondary ? "#60a5fa" : "#6b7280", transition:"color 0.2s" }}>
+      <th onClick={() => handleSort(sortId)} title={isPrimary ? "Click para cambiar dirección (limpia secundario)" : isSecondary ? "Click para cambiar dirección" : "Click para ordenar · si ya hay un orden activo, agrega como secundario"} style={{ ...S.th, textAlign:align, cursor:"pointer", userSelect:"none", color: isPrimary ? "#c9a96e" : isSecondary ? "#60a5fa" : "#6b7280", transition:"color 0.2s" }}>
         {label}
         {isSecondary && <span style={{ marginLeft:2, fontSize:8, color:"#60a5fa", verticalAlign:"super" }}>2</span>}
         <span style={{ marginLeft:4, fontSize:9, opacity: active ? 1 : 0 }}>
