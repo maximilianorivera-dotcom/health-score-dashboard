@@ -379,9 +379,10 @@ export default function HealthDashboard() {
         next[1] = { key, dir: prev[1].dir === "desc" ? "asc" : "desc" };
         return next;
       } else {
-        // Columna inactiva: si hay primario → agrega/reemplaza secundario, si no → primario
+        // Columna inactiva: si hay 2 → el secundario pasa a primario, el nuevo es secundario
         if (prev.length === 0) return [{ key, dir:"desc" }];
-        return [prev[0], { key, dir:"desc" }];
+        if (prev.length === 1) return [...prev, { key, dir:"desc" }];
+        return [prev[1], { key, dir:"desc" }];
       }
     });
   }, []);
