@@ -186,9 +186,10 @@ function IndexTooltip({ c }) {
             {hasFb ? `${c.feedback_value}pts` : "—"}
           </span>
         </div>
-        {hasFb && c.feedback_source && (
+        {hasFb && (c.feedback_source || c.feedback_date) && (
           <div style={{ fontSize:10, color:"#7c7c8a", marginTop:-4, paddingLeft:4 }}>
-            ↳ Fuente: {c.feedback_source}
+            {c.feedback_source && `↳ Fuente: ${c.feedback_source}`}
+            {c.feedback_date && <span style={{ marginLeft:6, color:"#6b7280" }}>· {new Date(c.feedback_date).toLocaleDateString("es-CL")}</span>}
           </div>
         )}
       </div>
@@ -328,9 +329,9 @@ export default function HealthDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedCSM, setSelectedCSM] = useState(null);
-  const [sortKey, setSortKey] = useState("mrr");
-  const [sortDir, setSortDir] = useState("desc");
+  const [sortKeys, setSortKeys] = useState([{ key:"mrr", dir:"desc" }]);
   const [search, setSearch] = useState("");
+  const [sizeFilter, setSizeFilter] = useState("all");
 
   useEffect(() => {
     (async () => {
@@ -365,41 +366,60 @@ export default function HealthDashboard() {
     if (csms.length > 0 && selectedCSM === null) setSelectedCSM(csms[0].name);
   }, [csms, selectedCSM]);
 
-  const handleSort = useCallback((key) => {
-    setSortKey(prev => {
-      if (prev === key) { setSortDir(d => d === "desc" ? "asc" : "desc"); return key; }
-      setSortDir("desc");
-      return key;
+  const handleSort = useCallback((key, shift) => {
+    setSortKeys(prev => {
+      const idx = prev.findIndex(s => s.key === key);
+      if (shift) {
+        if (idx === 0) return prev; // primary stays primary
+        if (idx === 1) {
+          const next = [...prev];
+          next[1] = { key, dir: next[1].dir === "desc" ? "asc" : "desc" };
+          return next;
+        }
+        return [prev[0], { key, dir:"desc" }];
+      } else {
+        if (idx === 0) return [{ key, dir: prev[0].dir === "desc" ? "asc" : "desc" }];
+        return [{ key, dir:"desc" }];
+      }
     });
   }, []);
 
   const clients = useMemo(() => {
     let list = data.filter(c => (c.csm || "Sin asignar") === selectedCSM);
+    if (sizeFilter !== "all") list = list.filter(c => (c.client_size || "M") === sizeFilter);
     if (search) {
       const q = search.toLowerCase();
       list = list.filter(c => (c.client_name||"").toLowerCase().includes(q) || (c.email||"").toLowerCase().includes(q));
     }
-    const dir = sortDir === "desc" ? -1 : 1;
-    list.sort((a, b) => {
-      let va, vb;
-      switch (sortKey) {
-        case "mrr": va = a.mrr||0; vb = b.mrr||0; break;
-        case "index": va = a.index_score ?? -999; vb = b.index_score ?? -999; break;
-        case "momentum": va = a.momentum_score ?? -999; vb = b.momentum_score ?? -999; break;
-        case "freshness": {
-          const order = { verde:4, amarillo:3, rojo:2, sin_fecha:1 };
-          va = order[a.freshness] || 0; vb = order[b.freshness] || 0; break;
-        }
-        case "name": return dir * (a.client_name||"").localeCompare(b.client_name||"");
-        default: va = 0; vb = 0;
+    const getValue = (c, key) => {
+      switch (key) {
+        case "mrr":      return c.mrr || 0;
+        case "index":    return c.index_score ?? -999;
+        case "momentum": return c.momentum_score ?? -999;
+        case "freshness": return { verde:4, amarillo:3, rojo:2, sin_fecha:1 }[c.freshness] || 0;
+        case "name":     return null;
+        default:         return 0;
       }
-      return dir * (va - vb);
+    };
+    list.sort((a, b) => {
+      for (const { key, dir } of sortKeys) {
+        const d = dir === "desc" ? -1 : 1;
+        if (key === "name") {
+          const cmp = (a.client_name||"").localeCompare(b.client_name||"");
+          if (cmp !== 0) return d * cmp;
+        } else {
+          const va = getValue(a, key), vb = getValue(b, key);
+          if (va !== vb) return d * (va - vb);
+        }
+      }
+      return 0;
     });
     return list;
-  }, [data, selectedCSM, search, sortKey, sortDir]);
+  }, [data, selectedCSM, search, sortKeys, sizeFilter]);
 
   const csmStats = useMemo(() => {
-    const list = data.filter(c => (c.csm||"Sin asignar") === selectedCSM);
+    let list = data.filter(c => (c.csm||"Sin asignar") === selectedCSM);
+    if (sizeFilter !== "all") list = list.filter(c => (c.client_size || "M") === sizeFilter);
     const withIdx = list.filter(c => c.index_score != null);
     const withMom = list.filter(c => c.momentum_score != null);
     return {
@@ -409,7 +429,7 @@ export default function HealthDashboard() {
       avgMom: withMom.length ? Math.round(withMom.reduce((s,c) => s+c.momentum_score, 0)/withMom.length*10)/10 : null,
       critical: list.filter(c => (c.index_score != null && c.index_score <= 4) || (c.momentum_score != null && c.momentum_score <= 1)).length,
     };
-  }, [data, selectedCSM]);
+  }, [data, selectedCSM, sizeFilter]);
 
   if (loading) return (
     <div style={{ minHeight:"100vh", background:"#f9fafb", display:"flex", alignItems:"center", justifyContent:"center", flexDirection:"column" }}>
@@ -425,12 +445,17 @@ export default function HealthDashboard() {
   );
 
   const SortHeader = ({ label, sortId, align = "center" }) => {
-    const active = sortKey === sortId;
+    const idx = sortKeys.findIndex(s => s.key === sortId);
+    const isPrimary = idx === 0;
+    const isSecondary = idx === 1;
+    const active = idx >= 0;
+    const dir = active ? sortKeys[idx].dir : "desc";
     return (
-      <th onClick={() => handleSort(sortId)} style={{ ...S.th, textAlign:align, cursor:"pointer", userSelect:"none", color: active ? "#c9a96e" : "#6b7280", transition:"color 0.2s" }}>
+      <th onClick={(e) => handleSort(sortId, e.shiftKey)} title={isSecondary ? "Orden secundario (Shift+Click para cambiar)" : "Click para ordenar · Shift+Click para orden secundario"} style={{ ...S.th, textAlign:align, cursor:"pointer", userSelect:"none", color: isPrimary ? "#c9a96e" : isSecondary ? "#60a5fa" : "#6b7280", transition:"color 0.2s" }}>
         {label}
+        {isSecondary && <span style={{ marginLeft:2, fontSize:8, color:"#60a5fa", verticalAlign:"super" }}>2</span>}
         <span style={{ marginLeft:4, fontSize:9, opacity: active ? 1 : 0 }}>
-          {sortDir === "desc" ? "▼" : "▲"}
+          {dir === "desc" ? "▼" : "▲"}
         </span>
       </th>
     );
@@ -511,9 +536,24 @@ export default function HealthDashboard() {
           </div>
         </header>
 
-        {/* Search */}
-        <div style={{ marginBottom:16 }}>
+        {/* Search + Size filter */}
+        <div style={{ marginBottom:16, display:"flex", alignItems:"center", gap:12, flexWrap:"wrap" }}>
           <input type="text" placeholder="Buscar cliente…" value={search} onChange={e => setSearch(e.target.value)} style={S.search}/>
+          <div style={{ display:"flex", gap:4 }}>
+            {[["Todos","all"],["M","M"],["L","L"]].map(([label, val]) => {
+              const isActive = sizeFilter === val;
+              return (
+                <button key={val} onClick={() => setSizeFilter(val)} style={{
+                  padding:"7px 14px", borderRadius:6, border:`1px solid ${isActive ? "#c9a96e" : "#e5e7eb"}`,
+                  background: isActive ? "#fef9ee" : "#ffffff", color: isActive ? "#92400e" : "#6b7280",
+                  fontSize:12, fontWeight: isActive ? 600 : 400, cursor:"pointer", fontFamily:"inherit",
+                  transition:"all 0.15s",
+                }}>
+                  {label}
+                </button>
+              );
+            })}
+          </div>
         </div>
 
         {/* Table */}
@@ -531,7 +571,7 @@ export default function HealthDashboard() {
             <tbody>
               {clients.map((c, i) => (
                 <tr key={c.client_id} style={{ ...S.tr, animation:`fadeIn 0.3s ease ${i*0.03}s both` }}
-                    onMouseOver={e => { e.currentTarget.style.background="#f0f4f8"; }}
+                    onMouseOver={e => { e.currentTarget.style.background="#dbeafe"; }}
                     onMouseOut={e => { e.currentTarget.style.background="transparent"; }}>
                   <td style={{ ...S.td, maxWidth:240 }}>
                     <a href={c.backofficeUrl} target="_blank" rel="noopener noreferrer"
