@@ -328,6 +328,7 @@ export default function HealthDashboard() {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [viewMode, setViewMode] = useState("team");
   const [selectedCSM, setSelectedCSM] = useState(null);
   const [sortKeys, setSortKeys] = useState([{ key:"mrr", dir:"desc" }]);
   const [search, setSearch] = useState("");
@@ -418,6 +419,47 @@ export default function HealthDashboard() {
     return list;
   }, [data, selectedCSM, search, sortKeys, sizeFilter]);
 
+  const teamStats = useMemo(() => {
+    const withIdx = data.filter(c => c.index_score != null);
+    const withMom = data.filter(c => c.momentum_score != null);
+    return {
+      total: data.length,
+      avgIndex: withIdx.length ? Math.round(withIdx.reduce((s,c) => s+c.index_score,0)/withIdx.length*10)/10 : null,
+      avgMom: withMom.length ? Math.round(withMom.reduce((s,c) => s+c.momentum_score,0)/withMom.length*10)/10 : null,
+      atRisk: data.filter(c => (c.index_score != null && c.index_score <= 4) || (c.momentum_score != null && c.momentum_score <= 1)).length,
+      inactive: data.filter(c => c.days_since_last_use != null && c.days_since_last_use > 30).length,
+    };
+  }, [data]);
+
+  const csmTableData = useMemo(() => {
+    const map = {};
+    data.forEach(c => {
+      const name = c.csm || "Sin asignar";
+      if (!map[name]) map[name] = { name, clients:[] };
+      map[name].clients.push(c);
+    });
+    return Object.values(map).map(({ name, clients }) => {
+      const withIdx = clients.filter(c => c.index_score != null);
+      const withMom = clients.filter(c => c.momentum_score != null);
+      const green  = clients.filter(c => c.index_score != null && c.index_score >= 7).length;
+      const yellow = clients.filter(c => c.index_score != null && c.index_score >= 4 && c.index_score < 7).length;
+      const red    = clients.filter(c => c.index_score == null || c.index_score < 4).length;
+      return {
+        name,
+        count: clients.length,
+        mrr: clients.reduce((s,c) => s+(c.mrr||0),0),
+        avgIndex: withIdx.length ? Math.round(withIdx.reduce((s,c) => s+c.index_score,0)/withIdx.length*10)/10 : null,
+        avgMom: withMom.length ? Math.round(withMom.reduce((s,c) => s+c.momentum_score,0)/withMom.length*10)/10 : null,
+        atRisk: clients.filter(c => (c.index_score != null && c.index_score <= 4) || (c.momentum_score != null && c.momentum_score <= 1)).length,
+        dist: { green, yellow, red, total: clients.length },
+      };
+    }).sort((a,b) => b.mrr - a.mrr);
+  }, [data]);
+
+  const alertClients = useMemo(() =>
+    [...data].filter(c => c.index_score != null).sort((a,b) => a.index_score - b.index_score).slice(0,10),
+  [data]);
+
   const csmStats = useMemo(() => {
     let list = data.filter(c => (c.csm||"Sin asignar") === selectedCSM);
     if (sizeFilter !== "all") list = list.filter(c => (c.client_size || "M") === sizeFilter);
@@ -480,14 +522,25 @@ export default function HealthDashboard() {
           <span style={{ color:"#c9a96e", fontSize:18 }}>⬡</span>
           <span style={{ fontWeight:700, fontSize:15, color:"#111827", letterSpacing:-0.3 }}>Health Score</span>
         </div>
-        <div style={{ padding:"0 12px 12px", fontSize:10, color:"#9ca3af", fontFamily:"'JetBrains Mono',monospace", textTransform:"uppercase", letterSpacing:0.5 }}>
+        <div style={{ padding:"0 12px 12px", display:"flex", gap:4 }}>
+          {[["Equipo","team"],["Cartera","csm"]].map(([label,mode]) => (
+            <button key={mode} onClick={() => setViewMode(mode)} style={{
+              flex:1, padding:"6px 0", borderRadius:6, border:"none", cursor:"pointer",
+              fontFamily:"inherit", fontSize:11, fontWeight: viewMode===mode ? 600 : 400,
+              background: viewMode===mode ? "#111827" : "#f3f4f6",
+              color: viewMode===mode ? "#ffffff" : "#6b7280",
+              transition:"all 0.15s",
+            }}>{label}</button>
+          ))}
+        </div>
+        <div style={{ padding:"0 12px 10px", fontSize:10, color:"#9ca3af", fontFamily:"'JetBrains Mono',monospace", textTransform:"uppercase", letterSpacing:0.5 }}>
           Success Managers
         </div>
         <nav style={{ flex:1, overflowY:"auto", padding:"0 8px" }}>
           {csms.map((csm, i) => {
             const active = csm.name === selectedCSM;
             return (
-              <button key={csm.name} onClick={() => setSelectedCSM(csm.name)} style={{
+              <button key={csm.name} onClick={() => { setSelectedCSM(csm.name); setViewMode("csm"); }} style={{
                 ...S.csmBtn,
                 background: active ? "#eff6ff" : "transparent",
                 borderLeft: active ? "2px solid #c9a96e" : "2px solid transparent",
@@ -516,103 +569,214 @@ export default function HealthDashboard() {
       </aside>
 
       {/* ── Main content ──────────────────────────────────────── */}
-      <main style={S.main}>
-        {/* CSM header */}
-        <header style={S.header}>
-          <div>
-            <h1 style={S.title}>{selectedCSM}</h1>
-            <p style={S.subtitle}>{csmStats.count} cuentas · {fmtCLP(csmStats.mrr)} MRR</p>
-          </div>
-          <div style={{ display:"flex", gap:16 }}>
-            {[
-              { label:"Avg Index", value: csmStats.avgIndex != null ? csmStats.avgIndex+"/10" : "—", color:"#c9a96e" },
-              { label:"Avg Momentum", value: csmStats.avgMom != null ? csmStats.avgMom+"/5" : "—", color:"#60a5fa" },
-              { label:"Críticos", value: csmStats.critical, color: csmStats.critical > 0 ? "#ef4444" : "#34d399" },
-            ].map(kpi => (
-              <div key={kpi.label} style={S.kpi}>
-                <div style={{ fontSize:10, color:"#6b7280", fontFamily:"'JetBrains Mono',monospace", textTransform:"uppercase", letterSpacing:0.5 }}>{kpi.label}</div>
-                <div style={{ fontSize:22, fontWeight:700, color:kpi.color, fontFamily:"'JetBrains Mono',monospace" }}>{kpi.value}</div>
-              </div>
-            ))}
-          </div>
-        </header>
-
-        {/* Search + Size filter */}
-        <div style={{ marginBottom:16, display:"flex", alignItems:"center", gap:12, flexWrap:"wrap" }}>
-          <input type="text" placeholder="Buscar cliente…" value={search} onChange={e => setSearch(e.target.value)} style={S.search}/>
-          <div style={{ display:"flex", gap:4 }}>
-            {[["Todos","all"],["M","M"],["L","L"]].map(([label, val]) => {
-              const isActive = sizeFilter === val;
-              return (
-                <button key={val} onClick={() => setSizeFilter(val)} style={{
-                  padding:"7px 14px", borderRadius:6, border:`1px solid ${isActive ? "#c9a96e" : "#e5e7eb"}`,
-                  background: isActive ? "#fef9ee" : "#ffffff", color: isActive ? "#92400e" : "#6b7280",
-                  fontSize:12, fontWeight: isActive ? 600 : 400, cursor:"pointer", fontFamily:"inherit",
-                  transition:"all 0.15s",
-                }}>
-                  {label}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Table */}
-        <div style={S.tableWrap}>
-          <table style={S.table}>
-            <thead>
-              <tr>
-                <SortHeader label="Cliente" sortId="name" align="left"/>
-                <SortHeader label="MRR" sortId="mrr" align="right"/>
-                <SortHeader label="Index" sortId="index"/>
-                <SortHeader label="Freshness" sortId="freshness"/>
-                <SortHeader label="Momentum" sortId="momentum"/>
-              </tr>
-            </thead>
-            <tbody>
-              {clients.map((c, i) => (
-                <tr key={c.client_id} style={{ ...S.tr, animation:`fadeIn 0.3s ease ${i*0.03}s both` }}
-                    onMouseOver={e => { e.currentTarget.style.background="#dbeafe"; }}
-                    onMouseOut={e => { e.currentTarget.style.background="transparent"; }}>
-                  <td style={{ ...S.td, maxWidth:240 }}>
-                    <a href={c.backofficeUrl} target="_blank" rel="noopener noreferrer"
-                       style={{ fontWeight:600, color:"#111827", fontSize:13, textDecoration:"none", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis", display:"block" }}
-                       onMouseOver={e => e.target.style.color="#c9a96e"}
-                       onMouseOut={e => e.target.style.color="#111827"}>
-                      {c.client_name}
-                    </a>
-                    <div style={{ fontSize:10, color:"#9ca3af", marginTop:1 }}>{c.email}</div>
-                    <div style={{ fontSize:10, color:"#6b7280", marginTop:1 }}>{c.plan} · {c.country}</div>
-                  </td>
-                  <td style={{ ...S.td, textAlign:"right", fontFamily:"'JetBrains Mono',monospace", fontSize:13, fontWeight:500, color:"#111827" }}>
-                    {fmtCLP(c.mrr)}
-                  </td>
-                  <td style={{ ...S.td, textAlign:"center" }}>
-                    <Tooltip content={<IndexTooltip c={c}/>} width={260}>
-                      <IndexDot value={c.index_score}/>
-                    </Tooltip>
-                  </td>
-                  <td style={{ ...S.td, textAlign:"center" }}>
-                    <Tooltip content={<FreshnessTooltip c={c}/>} width={280}>
-                      <FreshBadge freshness={c.freshness}/>
-                    </Tooltip>
-                  </td>
-                  <td style={{ ...S.td, textAlign:"center" }}>
-                    <Tooltip content={<MomentumTooltip c={c}/>} width={300}>
-                      <MomentumBadge score={c.momentum_score} symbol={c.momentum_symbol} label={c.momentum_label}/>
-                    </Tooltip>
-                  </td>
-                </tr>
+      {viewMode === "team" ? (
+        <main style={S.main}>
+          <header style={{ ...S.header, flexDirection:"column", alignItems:"flex-start", gap:16 }}>
+            <div>
+              <h1 style={S.title}>Vista Equipo</h1>
+              <p style={S.subtitle}>{teamStats.total} clientes · {data.length > 0 ? fmtCLP(data.reduce((s,c)=>s+(c.mrr||0),0)) : "—"} MRR total</p>
+            </div>
+            <div style={{ display:"flex", gap:12, flexWrap:"wrap" }}>
+              {[
+                { label:"Total Clientes",    value: teamStats.total,    color:"#111827" },
+                { label:"Avg Index",         value: teamStats.avgIndex != null ? teamStats.avgIndex+"/10" : "—", color:"#c9a96e" },
+                { label:"Avg Momentum",      value: teamStats.avgMom != null ? teamStats.avgMom+"/5" : "—", color:"#60a5fa" },
+                { label:"En Riesgo",         value: teamStats.atRisk,   color: teamStats.atRisk > 0 ? "#ef4444" : "#34d399" },
+                { label:"Sin Actividad +30d",value: teamStats.inactive, color: teamStats.inactive > 0 ? "#f97316" : "#34d399" },
+              ].map(kpi => (
+                <div key={kpi.label} style={S.kpi}>
+                  <div style={{ fontSize:10, color:"#6b7280", fontFamily:"'JetBrains Mono',monospace", textTransform:"uppercase", letterSpacing:0.5 }}>{kpi.label}</div>
+                  <div style={{ fontSize:20, fontWeight:700, color:kpi.color, fontFamily:"'JetBrains Mono',monospace" }}>{kpi.value}</div>
+                </div>
               ))}
-              {clients.length === 0 && (
-                <tr><td colSpan={6} style={{ ...S.td, textAlign:"center", color:"#9ca3af", padding:40 }}>
-                  {search ? "Sin resultados" : "Sin clientes asignados"}
-                </td></tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      </main>
+            </div>
+          </header>
+
+          <div style={{ display:"flex", gap:24, alignItems:"flex-start" }}>
+            {/* CSM table */}
+            <div style={{ flex:1, minWidth:0 }}>
+              <div style={{ fontSize:10, fontWeight:600, color:"#9ca3af", fontFamily:"'JetBrains Mono',monospace", textTransform:"uppercase", letterSpacing:0.5, marginBottom:10 }}>Success Managers</div>
+              <div style={S.tableWrap}>
+                <table style={S.table}>
+                  <thead>
+                    <tr>
+                      <th style={{ ...S.th, textAlign:"left" }}>CSM</th>
+                      <th style={S.th}>Clientes</th>
+                      <th style={S.th}>Avg Index</th>
+                      <th style={S.th}>Avg Mom</th>
+                      <th style={S.th}>En riesgo</th>
+                      <th style={{ ...S.th, textAlign:"left", minWidth:140 }}>Distribución Index</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {csmTableData.map((csm, i) => (
+                      <tr key={csm.name} style={{ ...S.tr, cursor:"pointer", animation:`fadeIn 0.3s ease ${i*0.04}s both` }}
+                          onClick={() => { setSelectedCSM(csm.name); setViewMode("csm"); }}
+                          onMouseOver={e => e.currentTarget.style.background="#dbeafe"}
+                          onMouseOut={e => e.currentTarget.style.background="transparent"}>
+                        <td style={{ ...S.td, fontWeight:600, color:"#111827", fontSize:13 }}>{csm.name}</td>
+                        <td style={{ ...S.td, textAlign:"center", fontFamily:"'JetBrains Mono',monospace", fontSize:13, color:"#374151" }}>{csm.count}</td>
+                        <td style={{ ...S.td, textAlign:"center" }}>
+                          <span style={{ fontFamily:"'JetBrains Mono',monospace", fontWeight:700, fontSize:13,
+                            color: csm.avgIndex == null ? "#9ca3af" : csm.avgIndex >= 7 ? "#16a34a" : csm.avgIndex >= 4 ? "#ca8a04" : "#dc2626" }}>
+                            {csm.avgIndex ?? "—"}
+                          </span>
+                        </td>
+                        <td style={{ ...S.td, textAlign:"center" }}>
+                          <span style={{ fontFamily:"'JetBrains Mono',monospace", fontWeight:700, fontSize:13,
+                            color: csm.avgMom == null ? "#9ca3af" : csm.avgMom >= 4 ? "#16a34a" : csm.avgMom >= 3 ? "#ca8a04" : "#dc2626" }}>
+                            {csm.avgMom ?? "—"}
+                          </span>
+                        </td>
+                        <td style={{ ...S.td, textAlign:"center" }}>
+                          {csm.atRisk > 0
+                            ? <span style={{ background:"#fee2e2", color:"#b91c1c", fontSize:11, fontWeight:700, padding:"2px 8px", borderRadius:99 }}>{csm.atRisk}</span>
+                            : <span style={{ color:"#9ca3af" }}>—</span>}
+                        </td>
+                        <td style={{ ...S.td }}>
+                          {csm.dist.total > 0 && (
+                            <>
+                              <div style={{ display:"flex", height:8, borderRadius:4, overflow:"hidden", gap:1 }}>
+                                {csm.dist.green  > 0 && <div style={{ flex:csm.dist.green,  background:"#16a34a" }}/>}
+                                {csm.dist.yellow > 0 && <div style={{ flex:csm.dist.yellow, background:"#ca8a04" }}/>}
+                                {csm.dist.red    > 0 && <div style={{ flex:csm.dist.red,    background:"#dc2626" }}/>}
+                              </div>
+                              <div style={{ fontSize:9, color:"#9ca3af", marginTop:3, fontFamily:"'JetBrains Mono',monospace" }}>
+                                {csm.dist.green}v · {csm.dist.yellow}a · {csm.dist.red}r
+                              </div>
+                            </>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Alert panel */}
+            <div style={{ width:300, flexShrink:0 }}>
+              <div style={{ fontSize:10, fontWeight:600, color:"#9ca3af", fontFamily:"'JetBrains Mono',monospace", textTransform:"uppercase", letterSpacing:0.5, marginBottom:10 }}>Alertas — Peor Index</div>
+              <div style={{ ...S.tableWrap, borderRadius:10 }}>
+                {alertClients.map((c, i) => (
+                  <div key={c.client_id} onClick={() => { setSelectedCSM(c.csm||"Sin asignar"); setViewMode("csm"); }}
+                       style={{ padding:"10px 14px", borderBottom:"1px solid #f3f4f6", display:"flex", justifyContent:"space-between", alignItems:"center", cursor:"pointer", animation:`fadeIn 0.3s ease ${i*0.04}s both` }}
+                       onMouseOver={e => e.currentTarget.style.background="#fef9c3"}
+                       onMouseOut={e => e.currentTarget.style.background="transparent"}>
+                    <div style={{ flex:1, minWidth:0 }}>
+                      <div style={{ fontWeight:600, fontSize:12, color:"#111827", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{c.client_name}</div>
+                      <div style={{ fontSize:10, color:"#9ca3af", marginTop:1 }}>{c.csm || "Sin asignar"}</div>
+                    </div>
+                    <div style={{ display:"flex", gap:6, alignItems:"center", marginLeft:8 }}>
+                      <span style={{ fontFamily:"'JetBrains Mono',monospace", fontWeight:700, fontSize:14,
+                        color: c.index_score >= 7 ? "#16a34a" : c.index_score >= 4 ? "#ca8a04" : "#dc2626" }}>
+                        {c.index_score}
+                      </span>
+                      <MomentumBadge score={c.momentum_score} symbol={c.momentum_symbol} label={c.momentum_label}/>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </main>
+      ) : (
+        <main style={S.main}>
+          {/* CSM header */}
+          <header style={S.header}>
+            <div>
+              <h1 style={S.title}>{selectedCSM}</h1>
+              <p style={S.subtitle}>{csmStats.count} cuentas · {fmtCLP(csmStats.mrr)} MRR</p>
+            </div>
+            <div style={{ display:"flex", gap:16 }}>
+              {[
+                { label:"Avg Index",    value: csmStats.avgIndex != null ? csmStats.avgIndex+"/10" : "—", color:"#c9a96e" },
+                { label:"Avg Momentum", value: csmStats.avgMom != null ? csmStats.avgMom+"/5" : "—",      color:"#60a5fa" },
+                { label:"Críticos",     value: csmStats.critical, color: csmStats.critical > 0 ? "#ef4444" : "#34d399" },
+              ].map(kpi => (
+                <div key={kpi.label} style={S.kpi}>
+                  <div style={{ fontSize:10, color:"#6b7280", fontFamily:"'JetBrains Mono',monospace", textTransform:"uppercase", letterSpacing:0.5 }}>{kpi.label}</div>
+                  <div style={{ fontSize:22, fontWeight:700, color:kpi.color, fontFamily:"'JetBrains Mono',monospace" }}>{kpi.value}</div>
+                </div>
+              ))}
+            </div>
+          </header>
+
+          {/* Search + Size filter */}
+          <div style={{ marginBottom:16, display:"flex", alignItems:"center", gap:12, flexWrap:"wrap" }}>
+            <input type="text" placeholder="Buscar cliente…" value={search} onChange={e => setSearch(e.target.value)} style={S.search}/>
+            <div style={{ display:"flex", gap:4 }}>
+              {[["Todos","all"],["M","M"],["L","L"]].map(([label, val]) => {
+                const isActive = sizeFilter === val;
+                return (
+                  <button key={val} onClick={() => setSizeFilter(val)} style={{
+                    padding:"7px 14px", borderRadius:6, border:`1px solid ${isActive ? "#c9a96e" : "#e5e7eb"}`,
+                    background: isActive ? "#fef9ee" : "#ffffff", color: isActive ? "#92400e" : "#6b7280",
+                    fontSize:12, fontWeight: isActive ? 600 : 400, cursor:"pointer", fontFamily:"inherit",
+                    transition:"all 0.15s",
+                  }}>{label}</button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Table */}
+          <div style={S.tableWrap}>
+            <table style={S.table}>
+              <thead>
+                <tr>
+                  <SortHeader label="Cliente" sortId="name" align="left"/>
+                  <SortHeader label="MRR" sortId="mrr" align="right"/>
+                  <SortHeader label="Index" sortId="index"/>
+                  <SortHeader label="Freshness" sortId="freshness"/>
+                  <SortHeader label="Momentum" sortId="momentum"/>
+                </tr>
+              </thead>
+              <tbody>
+                {clients.map((c, i) => (
+                  <tr key={c.client_id} style={{ ...S.tr, animation:`fadeIn 0.3s ease ${i*0.03}s both` }}
+                      onMouseOver={e => { e.currentTarget.style.background="#dbeafe"; }}
+                      onMouseOut={e => { e.currentTarget.style.background="transparent"; }}>
+                    <td style={{ ...S.td, maxWidth:240 }}>
+                      <a href={c.backofficeUrl} target="_blank" rel="noopener noreferrer"
+                         style={{ fontWeight:600, color:"#111827", fontSize:13, textDecoration:"none", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis", display:"block" }}
+                         onMouseOver={e => e.target.style.color="#c9a96e"}
+                         onMouseOut={e => e.target.style.color="#111827"}>
+                        {c.client_name}
+                      </a>
+                      <div style={{ fontSize:10, color:"#9ca3af", marginTop:1 }}>{c.email}</div>
+                      <div style={{ fontSize:10, color:"#6b7280", marginTop:1 }}>{c.plan} · {c.country}</div>
+                    </td>
+                    <td style={{ ...S.td, textAlign:"right", fontFamily:"'JetBrains Mono',monospace", fontSize:13, fontWeight:500, color:"#111827" }}>
+                      {fmtCLP(c.mrr)}
+                    </td>
+                    <td style={{ ...S.td, textAlign:"center" }}>
+                      <Tooltip content={<IndexTooltip c={c}/>} width={260}>
+                        <IndexDot value={c.index_score}/>
+                      </Tooltip>
+                    </td>
+                    <td style={{ ...S.td, textAlign:"center" }}>
+                      <Tooltip content={<FreshnessTooltip c={c}/>} width={280}>
+                        <FreshBadge freshness={c.freshness}/>
+                      </Tooltip>
+                    </td>
+                    <td style={{ ...S.td, textAlign:"center" }}>
+                      <Tooltip content={<MomentumTooltip c={c}/>} width={300}>
+                        <MomentumBadge score={c.momentum_score} symbol={c.momentum_symbol} label={c.momentum_label}/>
+                      </Tooltip>
+                    </td>
+                  </tr>
+                ))}
+                {clients.length === 0 && (
+                  <tr><td colSpan={6} style={{ ...S.td, textAlign:"center", color:"#9ca3af", padding:40 }}>
+                    {search ? "Sin resultados" : "Sin clientes asignados"}
+                  </td></tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </main>
+      )}
     </div>
   );
 }
