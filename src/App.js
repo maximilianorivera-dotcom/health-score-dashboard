@@ -168,34 +168,72 @@ function IndexTooltip({ c }) {
       <div style={{ fontWeight:700, color:"#e8d5b7", fontSize:13, marginBottom:8, letterSpacing:0.3 }}>
         INDEX — {c.index_score != null ? c.index_score+"/10" : "Sin datos"}
       </div>
-      <div style={{ display:"flex", flexDirection:"column", gap:6 }}>
-        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
-          <span style={{ color:"#9ca3af" }}>Loyalty <span style={{color:"#6b7280",fontSize:10}}>(60%)</span></span>
-          <span style={{ fontFamily:"'JetBrains Mono',monospace", fontWeight:600, color: hasLoy ? "#e8d5b7" : "#4b5563" }}>
-            {hasLoy ? `L${c.loyalty_value} → ${c.loyalty_value*2}pts` : "—"}
-          </span>
-        </div>
-        {hasLoy && c.loyalty_reason && (
-          <div style={{ fontSize:10, color:"#7c7c8a", marginTop:-4, paddingLeft:4 }}>
-            ↳ {c.loyalty_reason}
+      {c.override_applied ? (() => {
+        const winnerIsLoyalty = c.override_winner === "loyalty";
+        const fbDate = c.feedback_date ? new Date(c.feedback_date).toLocaleDateString("es-CL") : null;
+        // Winner row
+        const winnerLabel = winnerIsLoyalty ? "Loyalty (100%)" : `${c.feedback_source || "Feedback"} (100%)`;
+        const winnerValue = winnerIsLoyalty
+          ? (c.loyalty_value != null ? `L${c.loyalty_value} → ${c.loyalty_value*2}pts` : "—")
+          : (c.feedback_value != null ? `${c.feedback_value}pts` : "—");
+        // Loser row: left side shows "{source} {value}/10 · {date}" or "Loyalty L{n}"
+        const loserLeft = winnerIsLoyalty
+          ? [c.feedback_source, c.feedback_value != null ? `${c.feedback_value}/10` : null, fbDate].filter(Boolean).join(" ")
+          : (c.loyalty_value != null ? `Loyalty L${c.loyalty_value}` : "Loyalty");
+        return (
+          <div style={{ display:"flex", flexDirection:"column", gap:7 }}>
+            <div style={{ fontWeight:700, color:"#fb923c", fontSize:11, letterSpacing:0.3, paddingBottom:5, borderBottom:"1px solid #2d2d44" }}>
+              ⚡ Dominancia temporal activa
+            </div>
+            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+              <span style={{ color:"#4ade80" }}>✓ {winnerLabel}</span>
+              <span style={{ fontFamily:"'JetBrains Mono',monospace", fontWeight:600, color:"#e8d5b7" }}>
+                {winnerValue}
+              </span>
+            </div>
+            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", gap:8 }}>
+              <span style={{ color:"#f87171" }}>✗ {loserLeft}</span>
+              <span style={{ color:"#6b7280", fontSize:10, whiteSpace:"nowrap" }}>ignorado</span>
+            </div>
+            {c.override_reason && (
+              <div style={{ marginTop:2, paddingTop:6, borderTop:"1px solid #2d2d44", fontSize:10, color:"#9ca3af", lineHeight:1.6, fontStyle:"italic" }}>
+                "{c.override_reason}"
+              </div>
+            )}
           </div>
-        )}
-        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
-          <span style={{ color:"#9ca3af" }}>Feedback <span style={{color:"#6b7280",fontSize:10}}>(40%)</span></span>
-          <span style={{ fontFamily:"'JetBrains Mono',monospace", fontWeight:600, color: hasFb ? "#e8d5b7" : "#4b5563" }}>
-            {hasFb ? `${c.feedback_value}pts` : "—"}
-          </span>
-        </div>
-        {hasFb && (c.feedback_source || c.feedback_date) && (
-          <div style={{ fontSize:10, color:"#7c7c8a", marginTop:-4, paddingLeft:4 }}>
-            {c.feedback_source && `↳ Fuente: ${c.feedback_source}`}
-            {c.feedback_date && <span style={{ marginLeft:6, color:"#6b7280" }}>· {new Date(c.feedback_date).toLocaleDateString("es-CL")}</span>}
+        );
+      })() : (
+        <>
+          <div style={{ display:"flex", flexDirection:"column", gap:6 }}>
+            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+              <span style={{ color:"#9ca3af" }}>Loyalty <span style={{color:"#6b7280",fontSize:10}}>(60%)</span></span>
+              <span style={{ fontFamily:"'JetBrains Mono',monospace", fontWeight:600, color: hasLoy ? "#e8d5b7" : "#4b5563" }}>
+                {hasLoy ? `L${c.loyalty_value} → ${c.loyalty_value*2}pts` : "—"}
+              </span>
+            </div>
+            {hasLoy && c.loyalty_reason && (
+              <div style={{ fontSize:10, color:"#7c7c8a", marginTop:-4, paddingLeft:4 }}>
+                ↳ {c.loyalty_reason}
+              </div>
+            )}
+            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+              <span style={{ color:"#9ca3af" }}>Feedback <span style={{color:"#6b7280",fontSize:10}}>(40%)</span></span>
+              <span style={{ fontFamily:"'JetBrains Mono',monospace", fontWeight:600, color: hasFb ? "#e8d5b7" : "#4b5563" }}>
+                {hasFb ? `${c.feedback_value}pts` : "—"}
+              </span>
+            </div>
+            {hasFb && (c.feedback_source || c.feedback_date) && (
+              <div style={{ fontSize:10, color:"#7c7c8a", marginTop:-4, paddingLeft:4 }}>
+                {c.feedback_source && `↳ Fuente: ${c.feedback_source}`}
+                {c.feedback_date && <span style={{ marginLeft:6, color:"#6b7280" }}>· {new Date(c.feedback_date).toLocaleDateString("es-CL")}</span>}
+              </div>
+            )}
           </div>
-        )}
-      </div>
-      <div style={{ marginTop:8, paddingTop:8, borderTop:"1px solid #2d2d44", fontSize:10, color:"#6b7280", fontFamily:"'JetBrains Mono',monospace" }}>
-        Fórmula: Loyalty×2 × 0.6 + Feedback × 0.4
-      </div>
+          <div style={{ marginTop:8, paddingTop:8, borderTop:"1px solid #2d2d44", fontSize:10, color:"#6b7280", fontFamily:"'JetBrains Mono',monospace" }}>
+            Fórmula: Loyalty×2 × 0.6 + Feedback × 0.4
+          </div>
+        </>
+      )}
     </div>
   );
 }
@@ -276,23 +314,30 @@ function FreshnessTooltip({ c }) {
 }
 
 // ── Index mini gauge ─────────────────────────────────────────────
-function IndexDot({ value }) {
+function IndexDot({ value, overrideApplied }) {
   if (value == null) return <span style={{ color:"#d1d5db", fontSize:13 }}>—</span>;
   const color = value >= 8 ? "#34d399" : value >= 6 ? "#60a5fa" : value >= 4 ? "#fbbf24" : "#ef4444";
   const pct = Math.min(value/10, 1);
   return (
     <div style={{ display:"flex", alignItems:"center", justifyContent:"center", gap:8 }}>
-      <div style={{ width:36, height:36, position:"relative" }}>
-        <svg width={36} height={36} viewBox="0 0 36 36" style={{ transform:"rotate(-90deg)" }}>
-          <circle cx={18} cy={18} r={14} fill="none" stroke="#e5e7eb" strokeWidth={3}/>
-          <circle cx={18} cy={18} r={14} fill="none" stroke={color} strokeWidth={3}
-            strokeDasharray={`${87.96*pct} ${87.96*(1-pct)}`}
-            strokeLinecap="round"
-            style={{ transition:"stroke-dasharray 0.6s ease" }}/>
-        </svg>
-        <span style={{ position:"absolute", inset:0, display:"flex", alignItems:"center", justifyContent:"center", fontSize:11, fontWeight:700, color, fontFamily:"'JetBrains Mono',monospace" }}>
-          {value}
-        </span>
+      <div style={{ position:"relative", display:"inline-flex" }}>
+        <div style={{ width:36, height:36, position:"relative" }}>
+          <svg width={36} height={36} viewBox="0 0 36 36" style={{ transform:"rotate(-90deg)" }}>
+            <circle cx={18} cy={18} r={14} fill="none" stroke="#e5e7eb" strokeWidth={3}/>
+            <circle cx={18} cy={18} r={14} fill="none" stroke={color} strokeWidth={3}
+              strokeDasharray={`${87.96*pct} ${87.96*(1-pct)}`}
+              strokeLinecap="round"
+              style={{ transition:"stroke-dasharray 0.6s ease" }}/>
+          </svg>
+          <span style={{ position:"absolute", inset:0, display:"flex", alignItems:"center", justifyContent:"center", fontSize:11, fontWeight:700, color, fontFamily:"'JetBrains Mono',monospace" }}>
+            {value}
+          </span>
+        </div>
+        {overrideApplied && (
+          <span style={{ position:"absolute", top:-4, right:-6, width:14, height:14, borderRadius:"50%", background:"#ea580c", display:"flex", alignItems:"center", justifyContent:"center", fontSize:9, fontWeight:700, color:"#fff", lineHeight:1 }}>
+            i
+          </span>
+        )}
       </div>
     </div>
   );
@@ -752,7 +797,7 @@ export default function HealthDashboard() {
                     </td>
                     <td style={{ ...S.td, textAlign:"center" }}>
                       <Tooltip content={<IndexTooltip c={c}/>} width={260}>
-                        <IndexDot value={c.index_score}/>
+                        <IndexDot value={c.index_score} overrideApplied={c.override_applied}/>
                       </Tooltip>
                     </td>
                     <td style={{ ...S.td, textAlign:"center" }}>
