@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback, useRef } from "react";
+import { useState, useEffect, useLayoutEffect, useMemo, useCallback, useRef } from "react";
 import { createPortal } from "react-dom";
 
 /*
@@ -115,42 +115,103 @@ const MOM_C = {
 
 // ── Tooltip component ────────────────────────────────────────────
 function Tooltip({ children, content, width = 280 }) {
-  const [show, setShow] = useState(false);
-  const [pos, setPos] = useState({ x: 0, y: 0 });
-  const ref = useRef(null);
-  const tipRef = useRef(null);
+  const [show, setShow]           = useState(false);
+  const [ready, setReady]         = useState(false);
+  const [placement, setPlacement] = useState("top");
+  const [tipPos, setTipPos]       = useState({ x:0, y:0, arrowLeft:"50%", arrowTop:"50%" });
+  const anchorRect                = useRef(null);
+  const tipRef                    = useRef(null);
 
   const handleEnter = useCallback((e) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    let x = rect.left + rect.width / 2;
-    let y = rect.top - 8;
-    // Clamp to viewport
-    if (x - width/2 < 8) x = width/2 + 8;
-    if (x + width/2 > window.innerWidth - 8) x = window.innerWidth - width/2 - 8;
-    setPos({ x, y });
+    anchorRect.current = e.currentTarget.getBoundingClientRect();
+    setReady(false);
     setShow(true);
-  }, [width]);
+  }, []);
+
+  // After the tooltip renders (invisible), measure its height and pick direction
+  useLayoutEffect(() => {
+    if (!show || !tipRef.current) return;
+    const a   = anchorRect.current;
+    const tipH = tipRef.current.offsetHeight;
+    const GAP  = 12;
+    const vw   = window.innerWidth;
+    const vh   = window.innerHeight;
+
+    const above = a.top;
+    const below = vh - a.bottom;
+    const right = vw - a.right;
+    const left  = a.left;
+
+    let pl;
+    if      (above >= tipH + GAP)  pl = "top";
+    else if (below >= tipH + GAP)  pl = "bottom";
+    else if (right >= width + GAP) pl = "right";
+    else if (left  >= width + GAP) pl = "left";
+    else {
+      const m = Math.max(above, below, right, left);
+      pl = m === above ? "top" : m === below ? "bottom" : m === right ? "right" : "left";
+    }
+
+    let x, y, arrowLeft = "50%", arrowTop = "50%";
+
+    if (pl === "top" || pl === "bottom") {
+      let cx = a.left + a.width / 2;
+      cx = Math.max(width / 2 + GAP, Math.min(vw - width / 2 - GAP, cx));
+      x = cx;
+      y = pl === "top" ? a.top - GAP : a.bottom + GAP;
+      const rawPct = ((a.left + a.width / 2) - (cx - width / 2)) / width * 100;
+      arrowLeft = `${Math.max(10, Math.min(90, rawPct))}%`;
+    } else {
+      let cy = a.top + a.height / 2;
+      cy = Math.max(tipH / 2 + GAP, Math.min(vh - tipH / 2 - GAP, cy));
+      y = cy;
+      x = pl === "right" ? a.right + GAP : a.left - GAP;
+      const rawPct = ((a.top + a.height / 2) - (cy - tipH / 2)) / tipH * 100;
+      arrowTop = `${Math.max(10, Math.min(90, rawPct))}%`;
+    }
+
+    setPlacement(pl);
+    setTipPos({ x, y, arrowLeft, arrowTop });
+    setReady(true);
+  }, [show, width]);
+
+  const transforms = {
+    top:    "translate(-50%, -100%)",
+    bottom: "translate(-50%, 0)",
+    right:  "translate(0, -50%)",
+    left:   "translate(-100%, -50%)",
+  };
+
+  const arrowBase = { position:"absolute", width:10, height:10, background:"#1A1A2E" };
+  const arrowStyle = placement === "top"
+    ? { ...arrowBase, bottom:-5, left:tipPos.arrowLeft, transform:"translateX(-50%) rotate(45deg)" }
+    : placement === "bottom"
+    ? { ...arrowBase, top:-5,    left:tipPos.arrowLeft, transform:"translateX(-50%) rotate(45deg)" }
+    : placement === "right"
+    ? { ...arrowBase, left:-5,   top:tipPos.arrowTop,   transform:"translateY(-50%) rotate(45deg)" }
+    : { ...arrowBase, right:-5,  top:tipPos.arrowTop,   transform:"translateY(-50%) rotate(45deg)" };
 
   return (
     <span
-      ref={ref}
       onMouseEnter={handleEnter}
-      onMouseLeave={() => setShow(false)}
-      style={{ position: "relative", cursor: "default" }}
+      onMouseLeave={() => { setShow(false); setReady(false); }}
+      style={{ position:"relative", cursor:"default" }}
     >
       {children}
       {show && createPortal(
         <div ref={tipRef} style={{
-          position:"fixed", left:pos.x, top:pos.y, transform:"translate(-50%, -100%)",
+          position:"fixed", left:tipPos.x, top:tipPos.y,
+          transform: transforms[placement],
           width, background:"#1A1A2E", borderRadius:12,
-          padding:"16px 18px", zIndex:9999, boxShadow:"0 8px 32px rgba(0,0,0,0.24)",
-          pointerEvents:"none", opacity:1, fontFamily:"'Inter',system-ui,sans-serif",
+          padding:"16px 18px", zIndex:9999,
+          boxShadow:"0 8px 32px rgba(0,0,0,0.24)",
+          pointerEvents:"none",
+          opacity: ready ? 1 : 0,
+          transition:"opacity 0.08s",
+          fontFamily:"'Inter',system-ui,sans-serif",
         }}>
           {content}
-          <div style={{
-            position:"absolute", bottom:-5, left:"50%", transform:"translateX(-50%) rotate(45deg)",
-            width:10, height:10, background:"#1A1A2E",
-          }}/>
+          <div style={arrowStyle}/>
         </div>,
         document.body
       )}
