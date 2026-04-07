@@ -99,18 +99,18 @@ const fmtPct = n => n != null ? `${n > 0 ? "+" : ""}${n}%` : "—";
 
 // ── Freshness config ─────────────────────────────────────────────
 const FRESH = {
-  verde:     { bg:"#dcfce7", fg:"#15803d", dot:"#16a34a", label:"Fresco",    desc:"Datos actualizados hace < 30 días" },
-  amarillo:  { bg:"#fef9c3", fg:"#a16207", dot:"#ca8a04", label:"Tibio",     desc:"Última actualización: 30-60 días" },
-  rojo:      { bg:"#fee2e2", fg:"#b91c1c", dot:"#dc2626", label:"Stale",     desc:"Datos con > 60 días de antigüedad" },
-  sin_fecha: { bg:"#f3f4f6", fg:"#6b7280", dot:"#9ca3af", label:"Sin fecha", desc:"No hay fecha de referencia" },
+  verde:     { bg:"#ECFDF5", fg:"#065F46", dot:"#22C48A", label:"Fresco",    desc:"Datos actualizados hace < 30 días" },
+  amarillo:  { bg:"#FFFBEB", fg:"#92400E", dot:"#F59E0B", label:"Tibio",     desc:"Última actualización: 30-60 días" },
+  rojo:      { bg:"#FEF2F2", fg:"#991B1B", dot:"#EF4444", label:"Stale",     desc:"Datos con > 60 días de antigüedad" },
+  sin_fecha: { bg:"#F4F4F6", fg:"#7A7A8C", dot:"#A0A0B0", label:"Sin fecha", desc:"No hay fecha de referencia" },
 };
 
 const MOM_C = {
-  5:{bg:"#dcfce7",fg:"#15803d",accent:"#16a34a"},
-  4:{bg:"#f0fdf4",fg:"#166534",accent:"#22c55e"},
-  3:{bg:"#f3f4f6",fg:"#374151",accent:"#6b7280"},
-  2:{bg:"#fff7ed",fg:"#9a3412",accent:"#f97316"},
-  1:{bg:"#fee2e2",fg:"#991b1b",accent:"#ef4444"},
+  5:{bg:"#ECFDF5",fg:"#065F46",accent:"#22C48A"},
+  4:{bg:"#F0FDF4",fg:"#166534",accent:"#4ADE80"},
+  3:{bg:"#F4F4F6",fg:"#7A7A8C",accent:"#A0A0B0"},
+  2:{bg:"#FFFBEB",fg:"#92400E",accent:"#F59E0B"},
+  1:{bg:"#FEF2F2",fg:"#991B1B",accent:"#EF4444"},
 };
 
 // ── Tooltip component ────────────────────────────────────────────
@@ -142,15 +142,14 @@ function Tooltip({ children, content, width = 280 }) {
       {show && createPortal(
         <div ref={tipRef} style={{
           position:"fixed", left:pos.x, top:pos.y, transform:"translate(-50%, -100%)",
-          width, background:"#1a1a28", border:"1px solid #2d2d44", borderRadius:10,
-          padding:"14px 16px", zIndex:9999, boxShadow:"0 12px 40px rgba(0,0,0,0.6)",
-          pointerEvents:"none", opacity:1,
+          width, background:"#1A1A2E", borderRadius:10,
+          padding:"10px 14px", zIndex:9999, boxShadow:"0 8px 32px rgba(0,0,0,0.24)",
+          pointerEvents:"none", opacity:1, fontFamily:"'Inter',system-ui,sans-serif",
         }}>
           {content}
           <div style={{
-            position:"absolute", bottom:-6, left:"50%", transform:"translateX(-50%) rotate(45deg)",
-            width:12, height:12, background:"#1a1a28", borderRight:"1px solid #2d2d44",
-            borderBottom:"1px solid #2d2d44",
+            position:"absolute", bottom:-5, left:"50%", transform:"translateX(-50%) rotate(45deg)",
+            width:10, height:10, background:"#1A1A2E",
           }}/>
         </div>,
         document.body
@@ -164,39 +163,35 @@ function IndexTooltip({ c }) {
   const hasLoy = c.loyalty_value != null;
   const hasFb = c.feedback_value != null;
   return (
-    <div style={{ fontFamily:"'Söhne', 'DM Sans', sans-serif", fontSize:12, color:"#d1d5db" }}>
-      <div style={{ fontWeight:700, color:"#e8d5b7", fontSize:13, marginBottom:8, letterSpacing:0.3 }}>
+    <div style={{ fontSize:12, color:"rgba(255,255,255,0.75)" }}>
+      <div style={{ fontWeight:500, color:"#FFFFFF", fontSize:13, marginBottom:8 }}>
         INDEX — {c.index_score != null ? c.index_score+"/10" : "Sin datos"}
       </div>
       {c.override_applied ? (() => {
         const winnerIsLoyalty = c.override_winner === "loyalty";
         const fbDate = c.feedback_date ? new Date(c.feedback_date).toLocaleDateString("es-CL") : null;
-        // Winner row
         const winnerLabel = winnerIsLoyalty ? "Loyalty (100%)" : `${c.feedback_source || "Feedback"} (100%)`;
         const winnerValue = winnerIsLoyalty
           ? (c.loyalty_value != null ? `L${c.loyalty_value} → ${c.loyalty_value*2}pts` : "—")
           : (c.feedback_value != null ? `${c.feedback_value}pts` : "—");
-        // Loser row: left side shows "{source} {value}/10 · {date}" or "Loyalty L{n}"
         const loserLeft = winnerIsLoyalty
           ? [c.feedback_source, c.feedback_value != null ? `${c.feedback_value}/10` : null, fbDate].filter(Boolean).join(" ")
           : (c.loyalty_value != null ? `Loyalty L${c.loyalty_value}` : "Loyalty");
         return (
           <div style={{ display:"flex", flexDirection:"column", gap:7 }}>
-            <div style={{ fontWeight:700, color:"#fb923c", fontSize:11, letterSpacing:0.3, paddingBottom:5, borderBottom:"1px solid #2d2d44" }}>
+            <div style={{ fontWeight:600, color:"#F59E0B", fontSize:11, letterSpacing:0.3, paddingBottom:5, borderBottom:"1px solid rgba(255,255,255,0.1)" }}>
               ⚡ Dominancia temporal activa
             </div>
             <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
-              <span style={{ color:"#4ade80" }}>✓ {winnerLabel}</span>
-              <span style={{ fontFamily:"'JetBrains Mono',monospace", fontWeight:600, color:"#e8d5b7" }}>
-                {winnerValue}
-              </span>
+              <span style={{ color:"#22C48A" }}>✓ {winnerLabel}</span>
+              <span style={{ fontWeight:500, color:"#FFFFFF" }}>{winnerValue}</span>
             </div>
             <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", gap:8 }}>
-              <span style={{ color:"#f87171" }}>✗ {loserLeft}</span>
-              <span style={{ color:"#6b7280", fontSize:10, whiteSpace:"nowrap" }}>ignorado</span>
+              <span style={{ color:"#EF4444" }}>✗ {loserLeft}</span>
+              <span style={{ color:"rgba(255,255,255,0.35)", fontSize:10, whiteSpace:"nowrap" }}>ignorado</span>
             </div>
             {c.override_reason && (
-              <div style={{ marginTop:2, paddingTop:6, borderTop:"1px solid #2d2d44", fontSize:10, color:"#9ca3af", lineHeight:1.6, fontStyle:"italic" }}>
+              <div style={{ marginTop:2, paddingTop:6, borderTop:"1px solid rgba(255,255,255,0.1)", fontSize:10, color:"rgba(255,255,255,0.5)", lineHeight:1.6, fontStyle:"italic" }}>
                 "{c.override_reason}"
               </div>
             )}
@@ -206,30 +201,30 @@ function IndexTooltip({ c }) {
         <>
           <div style={{ display:"flex", flexDirection:"column", gap:6 }}>
             <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
-              <span style={{ color:"#9ca3af" }}>Loyalty <span style={{color:"#6b7280",fontSize:10}}>(60%)</span></span>
-              <span style={{ fontFamily:"'JetBrains Mono',monospace", fontWeight:600, color: hasLoy ? "#e8d5b7" : "#4b5563" }}>
+              <span style={{ color:"rgba(255,255,255,0.55)" }}>Loyalty <span style={{fontSize:10}}>(60%)</span></span>
+              <span style={{ fontWeight:500, color: hasLoy ? "#FFFFFF" : "rgba(255,255,255,0.25)" }}>
                 {hasLoy ? `L${c.loyalty_value} → ${c.loyalty_value*2}pts` : "—"}
               </span>
             </div>
             {hasLoy && c.loyalty_reason && (
-              <div style={{ fontSize:10, color:"#7c7c8a", marginTop:-4, paddingLeft:4 }}>
+              <div style={{ fontSize:10, color:"rgba(255,255,255,0.35)", marginTop:-4, paddingLeft:4 }}>
                 ↳ {c.loyalty_reason}
               </div>
             )}
             <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
-              <span style={{ color:"#9ca3af" }}>Feedback <span style={{color:"#6b7280",fontSize:10}}>(40%)</span></span>
-              <span style={{ fontFamily:"'JetBrains Mono',monospace", fontWeight:600, color: hasFb ? "#e8d5b7" : "#4b5563" }}>
+              <span style={{ color:"rgba(255,255,255,0.55)" }}>Feedback <span style={{fontSize:10}}>(40%)</span></span>
+              <span style={{ fontWeight:500, color: hasFb ? "#FFFFFF" : "rgba(255,255,255,0.25)" }}>
                 {hasFb ? `${c.feedback_value}pts` : "—"}
               </span>
             </div>
             {hasFb && (c.feedback_source || c.feedback_date) && (
-              <div style={{ fontSize:10, color:"#7c7c8a", marginTop:-4, paddingLeft:4 }}>
+              <div style={{ fontSize:10, color:"rgba(255,255,255,0.35)", marginTop:-4, paddingLeft:4 }}>
                 {c.feedback_source && `↳ Fuente: ${c.feedback_source}`}
-                {c.feedback_date && <span style={{ marginLeft:6, color:"#6b7280" }}>· {new Date(c.feedback_date).toLocaleDateString("es-CL")}</span>}
+                {c.feedback_date && <span style={{ marginLeft:6 }}>· {new Date(c.feedback_date).toLocaleDateString("es-CL")}</span>}
               </div>
             )}
           </div>
-          <div style={{ marginTop:8, paddingTop:8, borderTop:"1px solid #2d2d44", fontSize:10, color:"#6b7280", fontFamily:"'JetBrains Mono',monospace" }}>
+          <div style={{ marginTop:8, paddingTop:8, borderTop:"1px solid rgba(255,255,255,0.1)", fontSize:10, color:"rgba(255,255,255,0.3)", fontFamily:"'JetBrains Mono',monospace" }}>
             Fórmula: Loyalty×2 × 0.6 + Feedback × 0.4
           </div>
         </>
@@ -258,29 +253,29 @@ function MomentumTooltip({ c }) {
     );
   };
   return (
-    <div style={{ fontFamily:"'Söhne', 'DM Sans', sans-serif", fontSize:12, color:"#d1d5db" }}>
-      <div style={{ fontWeight:700, color:"#e8d5b7", fontSize:13, marginBottom:8, letterSpacing:0.3 }}>
+    <div style={{ fontSize:12, color:"rgba(255,255,255,0.75)" }}>
+      <div style={{ fontWeight:500, color:"#FFFFFF", fontSize:13, marginBottom:8 }}>
         MOMENTUM — {hasMom ? `${c.momentum_symbol} ${c.momentum_label}` : "Sin datos"}
       </div>
       {hasMom && (
-        <div style={{ marginBottom:6, fontFamily:"'JetBrains Mono',monospace", fontSize:11, color:"#7c7c8a" }}>
+        <div style={{ marginBottom:6, fontFamily:"'JetBrains Mono',monospace", fontSize:11, color:"rgba(255,255,255,0.4)" }}>
           Raw: {c.momentum_raw} → Score: {c.momentum_score}/5
         </div>
       )}
-      <div style={{ fontSize:10, color:"#6b7280", marginBottom:6, textTransform:"uppercase", letterSpacing:0.5 }}>Señales de producto</div>
-      {bar("Días activos /30d", c.days_active_30, 28, "#60a5fa")}
-      {bar("Variación convos %", c.variacion_pct, 80, c.variacion_pct >= 0 ? "#4ade80" : "#f97316")}
-      {bar("Uso/Límite plan", c.proyeccion_sobre_limite, 1.2, "#a78bfa")}
-      <div style={{ marginTop:6, fontSize:10, color:"#6b7280", textTransform:"uppercase", letterSpacing:0.5, marginBottom:4 }}>Penalidades</div>
+      <div style={{ fontSize:10, color:"rgba(255,255,255,0.35)", marginBottom:6, textTransform:"uppercase", letterSpacing:"0.05em" }}>Señales de producto</div>
+      {bar("Días activos /30d", c.days_active_30, 28, "#3B82F6")}
+      {bar("Variación convos %", c.variacion_pct, 80, c.variacion_pct >= 0 ? "#22C48A" : "#F59E0B")}
+      {bar("Uso/Límite plan", c.proyeccion_sobre_limite, 1.2, "#5B5BF6")}
+      <div style={{ marginTop:6, fontSize:10, color:"rgba(255,255,255,0.35)", textTransform:"uppercase", letterSpacing:"0.05em", marginBottom:4 }}>Penalidades</div>
       <div style={{ display:"flex", gap:12, fontSize:11 }}>
-        <span style={{ color: c.pago_rechazado ? "#ef4444" : "#4b5563" }}>
+        <span style={{ color: c.pago_rechazado ? "#EF4444" : "rgba(255,255,255,0.35)" }}>
           {c.pago_rechazado ? "⚠ Pago rechazado (−65%)" : "✓ Pago OK"}
         </span>
-        <span style={{ color: c.days_since_last_use != null && c.days_since_last_use > 14 ? "#f97316" : "#4b5563" }}>
+        <span style={{ color: c.days_since_last_use != null && c.days_since_last_use > 14 ? "#F59E0B" : "rgba(255,255,255,0.35)" }}>
           {c.days_since_last_use != null ? `${c.days_since_last_use}d sin usar` : "Sin dato"}
         </span>
       </div>
-      <div style={{ marginTop:8, paddingTop:8, borderTop:"1px solid #2d2d44", fontSize:10, color:"#6b7280", fontFamily:"'JetBrains Mono',monospace" }}>
+      <div style={{ marginTop:8, paddingTop:8, borderTop:"1px solid rgba(255,255,255,0.1)", fontSize:10, color:"rgba(255,255,255,0.3)", fontFamily:"'JetBrains Mono',monospace" }}>
         base = DA×0.53 + VA×0.27 + PR×0.20 → × penalties
       </div>
     </div>
@@ -291,20 +286,20 @@ function MomentumTooltip({ c }) {
 function FreshnessTooltip({ c }) {
   const f = c.freshness ? FRESH[c.freshness] : null;
   return (
-    <div style={{ fontFamily:"'Söhne', 'DM Sans', sans-serif", fontSize:12, color:"#d1d5db" }}>
-      <div style={{ fontWeight:700, color:"#e8d5b7", fontSize:13, marginBottom:8, letterSpacing:0.3 }}>
+    <div style={{ fontSize:12, color:"rgba(255,255,255,0.75)" }}>
+      <div style={{ fontWeight:500, color:"#FFFFFF", fontSize:13, marginBottom:8 }}>
         FRESHNESS — {f ? f.label : "Sin datos"}
       </div>
-      <p style={{ margin:"0 0 8px", fontSize:12, color:"#9ca3af", lineHeight:1.5 }}>
+      <p style={{ margin:"0 0 8px", fontSize:12, color:"rgba(255,255,255,0.55)", lineHeight:1.5 }}>
         {f ? f.desc : "No hay datos de Index para evaluar frescura."}
       </p>
-      <div style={{ fontSize:10, color:"#6b7280", lineHeight:1.5 }}>
+      <div style={{ fontSize:10, color:"rgba(255,255,255,0.35)", lineHeight:1.5 }}>
         La frescura indica qué tan recientes son los datos de Loyalty y Feedback que componen el Index. Se mide desde la fecha más reciente entre ambos inputs.
       </div>
       <div style={{ marginTop:8, display:"flex", gap:8 }}>
         {Object.entries(FRESH).filter(([k])=>k!=="sin_fecha").map(([key, v]) => (
-          <span key={key} style={{ display:"inline-flex", alignItems:"center", gap:3, padding:"2px 6px", borderRadius:99, background: c.freshness===key ? v.bg : "transparent", border: c.freshness===key ? `1px solid ${v.dot}33` : "1px solid transparent", fontSize:10, color: v.fg, opacity: c.freshness===key ? 1 : 0.4 }}>
-            <span style={{ width:5, height:5, borderRadius:"50%", background:v.dot }}/>
+          <span key={key} style={{ display:"inline-flex", alignItems:"center", gap:3, padding:"2px 6px", borderRadius:6, background: c.freshness===key ? "rgba(255,255,255,0.12)" : "transparent", fontSize:10, color: c.freshness===key ? "#FFFFFF" : "rgba(255,255,255,0.3)" }}>
+            <span style={{ width:6, height:6, borderRadius:"50%", background:v.dot }}/>
             {v.label}
           </span>
         ))}
@@ -315,26 +310,26 @@ function FreshnessTooltip({ c }) {
 
 // ── Index mini gauge ─────────────────────────────────────────────
 function IndexDot({ value, overrideApplied }) {
-  if (value == null) return <span style={{ color:"#d1d5db", fontSize:13 }}>—</span>;
-  const color = value >= 8 ? "#34d399" : value >= 6 ? "#60a5fa" : value >= 4 ? "#fbbf24" : "#ef4444";
+  if (value == null) return <span style={{ color:"#A0A0B0", fontSize:13 }}>—</span>;
+  const color = value >= 8 ? "#22C48A" : value >= 6 ? "#3B82F6" : value >= 4 ? "#F59E0B" : "#EF4444";
   const pct = Math.min(value/10, 1);
   return (
-    <div style={{ display:"flex", alignItems:"center", justifyContent:"center", gap:8 }}>
+    <div style={{ display:"flex", alignItems:"center", justifyContent:"center" }}>
       <div style={{ position:"relative", display:"inline-flex" }}>
         <div style={{ width:36, height:36, position:"relative" }}>
           <svg width={36} height={36} viewBox="0 0 36 36" style={{ transform:"rotate(-90deg)" }}>
-            <circle cx={18} cy={18} r={14} fill="none" stroke="#e5e7eb" strokeWidth={3}/>
+            <circle cx={18} cy={18} r={14} fill="none" stroke="#F4F4F6" strokeWidth={3}/>
             <circle cx={18} cy={18} r={14} fill="none" stroke={color} strokeWidth={3}
               strokeDasharray={`${87.96*pct} ${87.96*(1-pct)}`}
               strokeLinecap="round"
               style={{ transition:"stroke-dasharray 0.6s ease" }}/>
           </svg>
-          <span style={{ position:"absolute", inset:0, display:"flex", alignItems:"center", justifyContent:"center", fontSize:11, fontWeight:700, color, fontFamily:"'JetBrains Mono',monospace" }}>
+          <span style={{ position:"absolute", inset:0, display:"flex", alignItems:"center", justifyContent:"center", fontSize:11, fontWeight:600, color, fontFamily:"'Inter',system-ui,sans-serif" }}>
             {value}
           </span>
         </div>
         {overrideApplied && (
-          <span style={{ position:"absolute", top:-4, right:-6, width:14, height:14, borderRadius:"50%", background:"#ea580c", display:"flex", alignItems:"center", justifyContent:"center", fontSize:9, fontWeight:700, color:"#fff", lineHeight:1 }}>
+          <span style={{ position:"absolute", top:-4, right:-6, width:14, height:14, borderRadius:"50%", background:"#F59E0B", display:"flex", alignItems:"center", justifyContent:"center", fontSize:9, fontWeight:700, color:"#1A1A2E", lineHeight:1 }}>
             i
           </span>
         )}
@@ -345,22 +340,22 @@ function IndexDot({ value, overrideApplied }) {
 
 // ── Momentum badge ───────────────────────────────────────────────
 function MomentumBadge({ score, symbol, label }) {
-  if (score == null) return <span style={{ color:"#d1d5db", fontSize:13 }}>—</span>;
+  if (score == null) return <span style={{ color:"#A0A0B0", fontSize:13 }}>—</span>;
   const mc = MOM_C[score];
   return (
-    <div style={{ display:"inline-flex", alignItems:"center", padding:"4px 10px", borderRadius:6, background:mc.bg }}>
-      <span style={{ fontSize:16, color:mc.accent, lineHeight:1 }}>{symbol}</span>
+    <div style={{ display:"inline-flex", alignItems:"center", padding:"2px 8px", borderRadius:6, background:mc.bg }}>
+      <span style={{ fontSize:15, color:mc.accent, lineHeight:1, fontWeight:500 }}>{symbol}</span>
     </div>
   );
 }
 
 // ── Freshness badge ──────────────────────────────────────────────
 function FreshBadge({ freshness }) {
-  if (!freshness) return <span style={{ color:"#d1d5db", fontSize:13 }}>—</span>;
+  if (!freshness) return <span style={{ color:"#A0A0B0", fontSize:13 }}>—</span>;
   const f = FRESH[freshness];
   return (
-    <span style={{ display:"inline-flex", alignItems:"center", gap:4, padding:"3px 9px", borderRadius:99, background:f.bg, color:f.fg, fontSize:11, fontWeight:500 }}>
-      <span style={{ width:6, height:6, borderRadius:"50%", background:f.dot }}/>
+    <span style={{ display:"inline-flex", alignItems:"center", gap:4, padding:"2px 8px", borderRadius:6, background:f.bg, color:f.fg, fontSize:11, fontWeight:500 }}>
+      <span style={{ width:8, height:8, borderRadius:"50%", background:f.dot, flexShrink:0 }}/>
       {f.label}
     </span>
   );
@@ -520,15 +515,15 @@ export default function HealthDashboard() {
   }, [data, selectedCSM, sizeFilter]);
 
   if (loading) return (
-    <div style={{ minHeight:"100vh", background:"#f9fafb", display:"flex", alignItems:"center", justifyContent:"center", flexDirection:"column" }}>
-      <div style={{ width:40, height:40, borderRadius:"50%", border:"3px solid #e5e7eb", borderTopColor:"#c9a96e", animation:"spin 0.8s linear infinite" }}/>
+    <div style={{ minHeight:"100vh", background:"#F4F4F6", display:"flex", alignItems:"center", justifyContent:"center", flexDirection:"column" }}>
+      <div style={{ width:36, height:36, borderRadius:"50%", border:"3px solid #E5E5E8", borderTopColor:"#5B5BF6", animation:"spin 0.8s linear infinite" }}/>
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
     </div>
   );
 
   if (error) return (
-    <div style={{ minHeight:"100vh", background:"#f9fafb", display:"flex", alignItems:"center", justifyContent:"center" }}>
-      <p style={{ color:"#ef4444" }}>Error: {error}</p>
+    <div style={{ minHeight:"100vh", background:"#F4F4F6", display:"flex", alignItems:"center", justifyContent:"center" }}>
+      <p style={{ color:"#EF4444", fontFamily:"'Inter',system-ui,sans-serif" }}>Error: {error}</p>
     </div>
   );
 
@@ -539,9 +534,9 @@ export default function HealthDashboard() {
     const active = idx >= 0;
     const dir = active ? sortKeys[idx].dir : "desc";
     return (
-      <th onClick={() => handleSort(sortId)} title={isPrimary ? "Click para cambiar dirección (limpia secundario)" : isSecondary ? "Click para cambiar dirección" : "Click para ordenar · si ya hay un orden activo, agrega como secundario"} style={{ ...S.th, textAlign:align, cursor:"pointer", userSelect:"none", color: isPrimary ? "#c9a96e" : isSecondary ? "#60a5fa" : "#6b7280", transition:"color 0.2s" }}>
+      <th onClick={() => handleSort(sortId)} title={isPrimary ? "Click para cambiar dirección (limpia secundario)" : isSecondary ? "Click para cambiar dirección" : "Click para ordenar · si ya hay un orden activo, agrega como secundario"} style={{ ...S.th, textAlign:align, cursor:"pointer", userSelect:"none", color: isPrimary ? "#5B5BF6" : isSecondary ? "#3B82F6" : "#A0A0B0", transition:"color 0.2s" }}>
         {label}
-        {isSecondary && <span style={{ marginLeft:2, fontSize:8, color:"#60a5fa", verticalAlign:"super" }}>2</span>}
+        {isSecondary && <span style={{ marginLeft:2, fontSize:8, color:"#3B82F6", verticalAlign:"super" }}>2</span>}
         <span style={{ marginLeft:4, fontSize:9, opacity: active ? 1 : 0 }}>
           {dir === "desc" ? "▼" : "▲"}
         </span>
@@ -551,34 +546,35 @@ export default function HealthDashboard() {
 
   return (
     <div style={S.root}>
-      <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+      <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet"/>
       <style>{`
         @keyframes fadeIn { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
         @keyframes slideIn { from{opacity:0;transform:translateX(-8px)} to{opacity:1;transform:translateX(0)} }
         *::-webkit-scrollbar{width:6px;height:6px}
-        *::-webkit-scrollbar-track{background:#f3f4f6}
-        *::-webkit-scrollbar-thumb{background:#d1d5db;border-radius:3px}
-        *::-webkit-scrollbar-thumb:hover{background:#9ca3af}
+        *::-webkit-scrollbar-track{background:#F4F4F6}
+        *::-webkit-scrollbar-thumb{background:#E5E5E8;border-radius:3px}
+        *::-webkit-scrollbar-thumb:hover{background:#A0A0B0}
+        input:focus{border-color:#5B5BF6 !important;outline:none}
       `}</style>
 
       {/* ── Left sidebar: CSM list ─────────────────────────────── */}
       <aside style={S.sidebar}>
         <div style={S.sidebarHeader}>
-          <span style={{ color:"#c9a96e", fontSize:18 }}>⬡</span>
-          <span style={{ fontWeight:700, fontSize:15, color:"#111827", letterSpacing:-0.3 }}>Health Score</span>
+          <span style={{ color:"#5B5BF6", fontSize:18 }}>⬡</span>
+          <span style={{ fontWeight:600, fontSize:15, color:"#FFFFFF", letterSpacing:-0.3 }}>Health Score</span>
         </div>
         <div style={{ padding:"0 12px 12px", display:"flex", gap:4 }}>
           {[["Equipo","team"],["Cartera","csm"]].map(([label,mode]) => (
             <button key={mode} onClick={() => setViewMode(mode)} style={{
-              flex:1, padding:"6px 0", borderRadius:6, border:"none", cursor:"pointer",
-              fontFamily:"inherit", fontSize:11, fontWeight: viewMode===mode ? 600 : 400,
-              background: viewMode===mode ? "#111827" : "#f3f4f6",
-              color: viewMode===mode ? "#ffffff" : "#6b7280",
+              flex:1, padding:"6px 0", borderRadius:20, border: viewMode===mode ? "none" : "1px solid rgba(255,255,255,0.12)",
+              cursor:"pointer", fontFamily:"inherit", fontSize:12, fontWeight:500,
+              background: viewMode===mode ? "#5B5BF6" : "transparent",
+              color: viewMode===mode ? "#FFFFFF" : "#6B6B85",
               transition:"all 0.15s",
             }}>{label}</button>
           ))}
         </div>
-        <div style={{ padding:"0 12px 10px", fontSize:10, color:"#9ca3af", fontFamily:"'JetBrains Mono',monospace", textTransform:"uppercase", letterSpacing:0.5 }}>
+        <div style={{ padding:"0 12px 10px", fontSize:11, color:"rgba(255,255,255,0.35)", textTransform:"uppercase", letterSpacing:"0.05em", fontWeight:500 }}>
           Success Managers
         </div>
         <nav style={{ flex:1, overflowY:"auto", padding:"0 8px" }}>
@@ -587,19 +583,19 @@ export default function HealthDashboard() {
             return (
               <button key={csm.name} onClick={() => { setSelectedCSM(csm.name); setViewMode("csm"); }} style={{
                 ...S.csmBtn,
-                background: active ? "#eff6ff" : "transparent",
-                borderLeft: active ? "2px solid #c9a96e" : "2px solid transparent",
+                background: active ? "rgba(91,91,246,0.15)" : "transparent",
+                borderLeft: active ? "2px solid #5B5BF6" : "2px solid transparent",
                 animation: `slideIn 0.3s ease ${i*0.04}s both`,
               }}>
                 <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
-                  <span style={{ fontWeight: active ? 600 : 400, color: active ? "#111827" : "#6b7280", fontSize:13 }}>
+                  <span style={{ fontWeight: active ? 600 : 400, color: active ? "#FFFFFF" : "#6B6B85", fontSize:13 }}>
                     {csm.name}
                   </span>
-                  <span style={{ fontFamily:"'JetBrains Mono',monospace", fontSize:10, color:"#6b7280" }}>
+                  <span style={{ fontSize:11, color:"rgba(255,255,255,0.35)", fontWeight:500 }}>
                     {csm.count}
                   </span>
                 </div>
-                <div style={{ fontSize:11, color:"#9ca3af", fontFamily:"'JetBrains Mono',monospace", marginTop:2 }}>
+                <div style={{ fontSize:11, color:"rgba(255,255,255,0.35)", marginTop:2 }}>
                   {fmtCLP(csm.mrr)}
                 </div>
               </button>
@@ -607,7 +603,7 @@ export default function HealthDashboard() {
           })}
         </nav>
         <div style={S.sidebarFooter}>
-          <div style={{ fontSize:10, color:"#9ca3af" }}>
+          <div style={{ fontSize:10, color:"rgba(255,255,255,0.3)" }}>
             {!WEBHOOK_URL ? "MOCK DATA" : "LIVE"} · {data.length} cuentas
           </div>
         </div>
@@ -623,15 +619,15 @@ export default function HealthDashboard() {
             </div>
             <div style={{ display:"flex", gap:12, flexWrap:"wrap" }}>
               {[
-                { label:"Total Clientes",    value: teamStats.total,    color:"#111827" },
-                { label:"Avg Index",         value: teamStats.avgIndex != null ? teamStats.avgIndex+"/10" : "—", color:"#c9a96e" },
-                { label:"Avg Momentum",      value: teamStats.avgMom != null ? teamStats.avgMom+"/5" : "—", color:"#60a5fa" },
-                { label:"En Riesgo",         value: teamStats.atRisk,   color: teamStats.atRisk > 0 ? "#ef4444" : "#34d399" },
-                { label:"Sin Actividad +30d",value: teamStats.inactive, color: teamStats.inactive > 0 ? "#f97316" : "#34d399" },
+                { label:"Total Clientes",    value: teamStats.total,    color:"#1A1A2E" },
+                { label:"Avg Index",         value: teamStats.avgIndex != null ? teamStats.avgIndex+"/10" : "—", color:"#5B5BF6" },
+                { label:"Avg Momentum",      value: teamStats.avgMom != null ? teamStats.avgMom+"/5" : "—", color:"#3B82F6" },
+                { label:"En Riesgo",         value: teamStats.atRisk,   color: teamStats.atRisk > 0 ? "#EF4444" : "#22C48A" },
+                { label:"Sin Actividad +30d",value: teamStats.inactive, color: teamStats.inactive > 0 ? "#F59E0B" : "#22C48A" },
               ].map(kpi => (
                 <div key={kpi.label} style={S.kpi}>
-                  <div style={{ fontSize:10, color:"#6b7280", fontFamily:"'JetBrains Mono',monospace", textTransform:"uppercase", letterSpacing:0.5 }}>{kpi.label}</div>
-                  <div style={{ fontSize:20, fontWeight:700, color:kpi.color, fontFamily:"'JetBrains Mono',monospace" }}>{kpi.value}</div>
+                  <div style={{ fontSize:11, color:"#A0A0B0", textTransform:"uppercase", letterSpacing:"0.05em", fontWeight:500 }}>{kpi.label}</div>
+                  <div style={{ fontSize:20, fontWeight:600, color:kpi.color }}>{kpi.value}</div>
                 </div>
               ))}
             </div>
@@ -640,7 +636,7 @@ export default function HealthDashboard() {
           <div style={{ display:"flex", gap:24, alignItems:"flex-start" }}>
             {/* CSM table */}
             <div style={{ flex:1, minWidth:0 }}>
-              <div style={{ fontSize:10, fontWeight:600, color:"#9ca3af", fontFamily:"'JetBrains Mono',monospace", textTransform:"uppercase", letterSpacing:0.5, marginBottom:10 }}>Success Managers</div>
+              <div style={{ fontSize:11, fontWeight:500, color:"#A0A0B0", textTransform:"uppercase", letterSpacing:"0.05em", marginBottom:10 }}>Success Managers</div>
               <div style={S.tableWrap}>
                 <table style={S.table}>
                   <thead>
@@ -657,26 +653,26 @@ export default function HealthDashboard() {
                     {csmTableData.map((csm, i) => (
                       <tr key={csm.name} style={{ ...S.tr, cursor:"pointer", animation:`fadeIn 0.3s ease ${i*0.04}s both` }}
                           onClick={() => { setSelectedCSM(csm.name); setViewMode("csm"); }}
-                          onMouseOver={e => e.currentTarget.style.background="#dbeafe"}
+                          onMouseOver={e => e.currentTarget.style.background="#F8F8FA"}
                           onMouseOut={e => e.currentTarget.style.background="transparent"}>
-                        <td style={{ ...S.td, fontWeight:600, color:"#111827", fontSize:13 }}>{csm.name}</td>
-                        <td style={{ ...S.td, textAlign:"center", fontFamily:"'JetBrains Mono',monospace", fontSize:13, color:"#374151" }}>{csm.count}</td>
+                        <td style={{ ...S.td, fontWeight:600, color:"#1A1A2E", fontSize:13 }}>{csm.name}</td>
+                        <td style={{ ...S.td, textAlign:"center", fontSize:13, color:"#7A7A8C", fontWeight:500 }}>{csm.count}</td>
                         <td style={{ ...S.td, textAlign:"center" }}>
-                          <span style={{ fontFamily:"'JetBrains Mono',monospace", fontWeight:700, fontSize:13,
-                            color: csm.avgIndex == null ? "#9ca3af" : csm.avgIndex >= 7 ? "#16a34a" : csm.avgIndex >= 4 ? "#ca8a04" : "#dc2626" }}>
+                          <span style={{ fontWeight:600, fontSize:13,
+                            color: csm.avgIndex == null ? "#A0A0B0" : csm.avgIndex >= 7 ? "#22C48A" : csm.avgIndex >= 4 ? "#F59E0B" : "#EF4444" }}>
                             {csm.avgIndex ?? "—"}
                           </span>
                         </td>
                         <td style={{ ...S.td, textAlign:"center" }}>
-                          <span style={{ fontFamily:"'JetBrains Mono',monospace", fontWeight:700, fontSize:13,
-                            color: csm.avgMom == null ? "#9ca3af" : csm.avgMom >= 4 ? "#16a34a" : csm.avgMom >= 3 ? "#ca8a04" : "#dc2626" }}>
+                          <span style={{ fontWeight:600, fontSize:13,
+                            color: csm.avgMom == null ? "#A0A0B0" : csm.avgMom >= 4 ? "#22C48A" : csm.avgMom >= 3 ? "#F59E0B" : "#EF4444" }}>
                             {csm.avgMom ?? "—"}
                           </span>
                         </td>
                         <td style={{ ...S.td, textAlign:"center" }}>
                           {csm.atRisk > 0
-                            ? <span style={{ background:"#fee2e2", color:"#b91c1c", fontSize:11, fontWeight:700, padding:"2px 8px", borderRadius:99 }}>{csm.atRisk}</span>
-                            : <span style={{ color:"#9ca3af" }}>—</span>}
+                            ? <span style={{ background:"#FEF2F2", color:"#991B1B", fontSize:11, fontWeight:500, padding:"2px 8px", borderRadius:6 }}>{csm.atRisk}</span>
+                            : <span style={{ color:"#A0A0B0" }}>—</span>}
                         </td>
                         <td style={{ ...S.td }}>
                           {csm.dist.total > 0 && (
@@ -686,7 +682,7 @@ export default function HealthDashboard() {
                                 {csm.dist.yellow > 0 && <div style={{ flex:csm.dist.yellow, background:"#ca8a04" }}/>}
                                 {csm.dist.red    > 0 && <div style={{ flex:csm.dist.red,    background:"#dc2626" }}/>}
                               </div>
-                              <div style={{ fontSize:9, color:"#9ca3af", marginTop:3, fontFamily:"'JetBrains Mono',monospace" }}>
+                              <div style={{ fontSize:10, color:"#A0A0B0", marginTop:3 }}>
                                 {csm.dist.green}v · {csm.dist.yellow}a · {csm.dist.red}r
                               </div>
                             </>
@@ -701,20 +697,20 @@ export default function HealthDashboard() {
 
             {/* Alert panel */}
             <div style={{ width:300, flexShrink:0 }}>
-              <div style={{ fontSize:10, fontWeight:600, color:"#9ca3af", fontFamily:"'JetBrains Mono',monospace", textTransform:"uppercase", letterSpacing:0.5, marginBottom:10 }}>Alertas — Peor Index</div>
+              <div style={{ fontSize:11, fontWeight:500, color:"#A0A0B0", textTransform:"uppercase", letterSpacing:"0.05em", marginBottom:10 }}>Alertas — Peor Index</div>
               <div style={{ ...S.tableWrap, borderRadius:10 }}>
                 {alertClients.map((c, i) => (
                   <div key={c.client_id} onClick={() => { setSelectedCSM(c.csm||"Sin asignar"); setViewMode("csm"); }}
                        style={{ padding:"10px 14px", borderBottom:"1px solid #f3f4f6", display:"flex", justifyContent:"space-between", alignItems:"center", cursor:"pointer", animation:`fadeIn 0.3s ease ${i*0.04}s both` }}
-                       onMouseOver={e => e.currentTarget.style.background="#fef9c3"}
+                       onMouseOver={e => e.currentTarget.style.background="#F8F8FA"}
                        onMouseOut={e => e.currentTarget.style.background="transparent"}>
                     <div style={{ flex:1, minWidth:0 }}>
-                      <div style={{ fontWeight:600, fontSize:12, color:"#111827", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{c.client_name}</div>
-                      <div style={{ fontSize:10, color:"#9ca3af", marginTop:1 }}>{c.csm || "Sin asignar"}</div>
+                      <div style={{ fontWeight:500, fontSize:12, color:"#1A1A2E", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{c.client_name}</div>
+                      <div style={{ fontSize:10, color:"#A0A0B0", marginTop:1 }}>{c.csm || "Sin asignar"}</div>
                     </div>
                     <div style={{ display:"flex", gap:6, alignItems:"center", marginLeft:8 }}>
-                      <span style={{ fontFamily:"'JetBrains Mono',monospace", fontWeight:700, fontSize:14,
-                        color: c.index_score >= 7 ? "#16a34a" : c.index_score >= 4 ? "#ca8a04" : "#dc2626" }}>
+                      <span style={{ fontWeight:600, fontSize:14,
+                        color: c.index_score >= 7 ? "#22C48A" : c.index_score >= 4 ? "#F59E0B" : "#EF4444" }}>
                         {c.index_score}
                       </span>
                       <MomentumBadge score={c.momentum_score} symbol={c.momentum_symbol} label={c.momentum_label}/>
@@ -733,15 +729,15 @@ export default function HealthDashboard() {
               <h1 style={S.title}>{selectedCSM}</h1>
               <p style={S.subtitle}>{csmStats.count} cuentas · {fmtCLP(csmStats.mrr)} MRR</p>
             </div>
-            <div style={{ display:"flex", gap:16 }}>
+            <div style={{ display:"flex", gap:12 }}>
               {[
-                { label:"Avg Index",    value: csmStats.avgIndex != null ? csmStats.avgIndex+"/10" : "—", color:"#c9a96e" },
-                { label:"Avg Momentum", value: csmStats.avgMom != null ? csmStats.avgMom+"/5" : "—",      color:"#60a5fa" },
-                { label:"Críticos",     value: csmStats.critical, color: csmStats.critical > 0 ? "#ef4444" : "#34d399" },
+                { label:"Avg Index",    value: csmStats.avgIndex != null ? csmStats.avgIndex+"/10" : "—", color:"#5B5BF6" },
+                { label:"Avg Momentum", value: csmStats.avgMom != null ? csmStats.avgMom+"/5" : "—",      color:"#3B82F6" },
+                { label:"Críticos",     value: csmStats.critical, color: csmStats.critical > 0 ? "#EF4444" : "#22C48A" },
               ].map(kpi => (
                 <div key={kpi.label} style={S.kpi}>
-                  <div style={{ fontSize:10, color:"#6b7280", fontFamily:"'JetBrains Mono',monospace", textTransform:"uppercase", letterSpacing:0.5 }}>{kpi.label}</div>
-                  <div style={{ fontSize:22, fontWeight:700, color:kpi.color, fontFamily:"'JetBrains Mono',monospace" }}>{kpi.value}</div>
+                  <div style={{ fontSize:11, color:"#A0A0B0", textTransform:"uppercase", letterSpacing:"0.05em", fontWeight:500 }}>{kpi.label}</div>
+                  <div style={{ fontSize:22, fontWeight:600, color:kpi.color }}>{kpi.value}</div>
                 </div>
               ))}
             </div>
@@ -755,9 +751,9 @@ export default function HealthDashboard() {
                 const isActive = sizeFilter === val;
                 return (
                   <button key={val} onClick={() => setSizeFilter(val)} style={{
-                    padding:"7px 14px", borderRadius:6, border:`1px solid ${isActive ? "#c9a96e" : "#e5e7eb"}`,
-                    background: isActive ? "#fef9ee" : "#ffffff", color: isActive ? "#92400e" : "#6b7280",
-                    fontSize:12, fontWeight: isActive ? 600 : 400, cursor:"pointer", fontFamily:"inherit",
+                    padding:"4px 14px", borderRadius:20, border: isActive ? "none" : "1px solid #E5E5E8",
+                    background: isActive ? "#5B5BF6" : "transparent", color: isActive ? "#FFFFFF" : "#7A7A8C",
+                    fontSize:12, fontWeight:500, cursor:"pointer", fontFamily:"inherit",
                     transition:"all 0.15s",
                   }}>{label}</button>
                 );
@@ -780,19 +776,19 @@ export default function HealthDashboard() {
               <tbody>
                 {clients.map((c, i) => (
                   <tr key={c.client_id} style={{ ...S.tr, animation:`fadeIn 0.3s ease ${i*0.03}s both` }}
-                      onMouseOver={e => { e.currentTarget.style.background="#dbeafe"; }}
+                      onMouseOver={e => { e.currentTarget.style.background="#F8F8FA"; }}
                       onMouseOut={e => { e.currentTarget.style.background="transparent"; }}>
                     <td style={{ ...S.td, maxWidth:240 }}>
                       <a href={c.backofficeUrl} target="_blank" rel="noopener noreferrer"
-                         style={{ fontWeight:600, color:"#111827", fontSize:13, textDecoration:"none", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis", display:"block" }}
-                         onMouseOver={e => e.target.style.color="#c9a96e"}
-                         onMouseOut={e => e.target.style.color="#111827"}>
+                         style={{ fontWeight:500, color:"#1A1A2E", fontSize:13, textDecoration:"none", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis", display:"block" }}
+                         onMouseOver={e => e.target.style.color="#5B5BF6"}
+                         onMouseOut={e => e.target.style.color="#1A1A2E"}>
                         {c.client_name}
                       </a>
-                      <div style={{ fontSize:10, color:"#9ca3af", marginTop:1 }}>{c.email}</div>
-                      <div style={{ fontSize:10, color:"#6b7280", marginTop:1 }}>{c.plan} · {c.country}</div>
+                      <div style={{ fontSize:11, color:"#A0A0B0", marginTop:1 }}>{c.email}</div>
+                      <div style={{ fontSize:11, color:"#7A7A8C", marginTop:1 }}>{c.plan} · {c.country}</div>
                     </td>
-                    <td style={{ ...S.td, textAlign:"right", fontFamily:"'JetBrains Mono',monospace", fontSize:13, fontWeight:500, color:"#111827" }}>
+                    <td style={{ ...S.td, textAlign:"right", fontSize:13, fontWeight:500, color:"#1A1A2E" }}>
                       {fmtCLP(c.mrr)}
                     </td>
                     <td style={{ ...S.td, textAlign:"center" }}>
@@ -829,11 +825,11 @@ export default function HealthDashboard() {
 // ── Styles ────────────────────────────────────────────────────────
 const S = {
   root: {
-    display:"flex", minHeight:"100vh", background:"#f9fafb", color:"#111827",
-    fontFamily:"'Outfit', sans-serif",
+    display:"flex", minHeight:"100vh", background:"#F4F4F6", color:"#1A1A2E",
+    fontFamily:"'Inter', system-ui, sans-serif",
   },
   sidebar: {
-    width:240, minWidth:240, background:"#ffffff", borderRight:"1px solid #e5e7eb",
+    width:240, minWidth:240, background:"#1A1A2E",
     display:"flex", flexDirection:"column", position:"sticky", top:0, height:"100vh",
     overflowY:"auto",
   },
@@ -846,45 +842,46 @@ const S = {
     display:"block", fontFamily:"inherit",
   },
   sidebarFooter: {
-    padding:"12px 16px", borderTop:"1px solid #e5e7eb",
+    padding:"12px 16px", borderTop:"1px solid rgba(255,255,255,0.08)",
   },
   main: {
     flex:1, padding:"24px 32px", overflowY:"auto", maxHeight:"100vh",
   },
   header: {
     display:"flex", justifyContent:"space-between", alignItems:"flex-end",
-    marginBottom:20, paddingBottom:16, borderBottom:"1px solid #e5e7eb",
+    marginBottom:20, paddingBottom:16, borderBottom:"1px solid #E5E5E8",
   },
   title: {
-    margin:0, fontSize:24, fontWeight:700, color:"#111827", letterSpacing:-0.3,
+    margin:0, fontSize:24, fontWeight:600, color:"#1A1A2E", letterSpacing:-0.3,
   },
   subtitle: {
-    margin:"4px 0 0", fontSize:13, color:"#6b7280",
-    fontFamily:"'JetBrains Mono',monospace",
+    margin:"4px 0 0", fontSize:13, color:"#7A7A8C",
   },
   kpi: {
-    background:"#f3f4f6", borderRadius:8, padding:"10px 16px", minWidth:100, textAlign:"center",
+    background:"#FFFFFF", border:"1px solid #E5E5E8", borderRadius:12,
+    padding:"10px 16px", minWidth:100, textAlign:"center",
   },
   search: {
-    background:"#ffffff", border:"1px solid #e5e7eb", borderRadius:8,
-    padding:"8px 14px", color:"#111827", fontSize:13, width:260,
-    fontFamily:"'Outfit',sans-serif", outline:"none", transition:"border-color 0.2s",
+    background:"#FFFFFF", border:"1px solid #E5E5E8", borderRadius:8,
+    padding:"0 14px", color:"#1A1A2E", fontSize:13, width:260, height:36,
+    fontFamily:"'Inter',system-ui,sans-serif", outline:"none", transition:"border-color 0.2s",
+    boxSizing:"border-box",
   },
   tableWrap: {
-    borderRadius:10, border:"1px solid #e5e7eb", overflow:"hidden",
+    borderRadius:12, border:"1px solid #E5E5E8", overflow:"hidden", background:"#FFFFFF",
   },
   table: {
     width:"100%", borderCollapse:"collapse",
   },
   th: {
-    padding:"12px 16px", fontSize:10, fontFamily:"'JetBrains Mono',monospace",
-    textTransform:"uppercase", letterSpacing:0.8, background:"#f9fafb",
-    borderBottom:"1px solid #e5e7eb", fontWeight:500, whiteSpace:"nowrap",
+    padding:"12px 16px", fontSize:11, fontFamily:"'Inter',system-ui,sans-serif",
+    textTransform:"uppercase", letterSpacing:"0.05em", background:"#F8F8FA",
+    borderBottom:"1px solid #E5E5E8", fontWeight:500, whiteSpace:"nowrap", color:"#A0A0B0",
   },
   tr: {
-    borderBottom:"1px solid #f3f4f6", transition:"background 0.15s", cursor:"default",
+    borderBottom:"1px solid #F0F0F3", transition:"background 0.15s", cursor:"default",
   },
   td: {
-    padding:"12px 16px", verticalAlign:"middle",
+    padding:"14px 16px", verticalAlign:"middle",
   },
 };
