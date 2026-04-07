@@ -142,8 +142,8 @@ function Tooltip({ children, content, width = 280 }) {
       {show && createPortal(
         <div ref={tipRef} style={{
           position:"fixed", left:pos.x, top:pos.y, transform:"translate(-50%, -100%)",
-          width, background:"#1A1A2E", borderRadius:10,
-          padding:"10px 14px", zIndex:9999, boxShadow:"0 8px 32px rgba(0,0,0,0.24)",
+          width, background:"#1A1A2E", borderRadius:12,
+          padding:"16px 18px", zIndex:9999, boxShadow:"0 8px 32px rgba(0,0,0,0.24)",
           pointerEvents:"none", opacity:1, fontFamily:"'Inter',system-ui,sans-serif",
         }}>
           {content}
@@ -159,73 +159,158 @@ function Tooltip({ children, content, width = 280 }) {
 }
 
 // ── Index tooltip content ────────────────────────────────────────
+// ── Shared tooltip helpers ───────────────────────────────────────
+const TIP_DIVIDER = <div style={{ borderTop:"1px solid rgba(255,255,255,0.07)", margin:"12px 0" }}/>;
+const TIP_SECTION = ({ children }) => (
+  <div style={{ fontSize:11, fontWeight:600, color:"#6B6B90", textTransform:"uppercase", letterSpacing:"0.05em", marginBottom:8 }}>
+    {children}
+  </div>
+);
+const tipBadge = (bg, color, label) => (
+  <div style={{ display:"inline-block", background:bg, color, borderRadius:20, padding:"4px 10px", fontSize:12, fontWeight:600, lineHeight:1 }}>
+    {label}
+  </div>
+);
+
 function IndexTooltip({ c }) {
-  const hasLoy = c.loyalty_value != null;
-  const hasFb = c.feedback_value != null;
+  const score = c.index_score;
+
+  const scoreColor = v => v == null ? "#6B6B90" : v >= 8 ? "#22C48A" : v >= 5 ? "#8B8BFF" : "#EF4444";
+  const scoreBadge = v => v == null
+    ? tipBadge("rgba(255,255,255,0.08)", "#6B6B90", "Sin datos")
+    : v >= 8  ? tipBadge("rgba(34,196,138,0.18)",  "#22C48A", "Saludable")
+    : v >= 5  ? tipBadge("rgba(91,91,246,0.18)",   "#8B8BFF", "Moderado")
+    : tipBadge("rgba(239,68,68,0.18)", "#EF4444", "En riesgo");
+
+  const fbDateStr  = c.feedback_date  ? new Date(c.feedback_date).toLocaleDateString("es-CL")  : null;
+  const loyDateStr = c.loyalty_date   ? new Date(c.loyalty_date).toLocaleDateString("es-CL")   : null;
+  const loyPts = c.loyalty_value != null ? c.loyalty_value * 2 : null;
+
   return (
-    <div style={{ fontSize:12, color:"rgba(255,255,255,0.75)" }}>
-      <div style={{ fontWeight:500, color:"#FFFFFF", fontSize:13, marginBottom:8 }}>
-        INDEX — {c.index_score != null ? c.index_score+"/10" : "Sin datos"}
+    <div style={{ fontSize:12, color:"#FFFFFF" }}>
+      {/* Header */}
+      <TIP_SECTION>INDEX</TIP_SECTION>
+      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:4 }}>
+        <div style={{ display:"flex", alignItems:"baseline", gap:3 }}>
+          <span style={{ fontSize:28, fontWeight:700, color:"#FFFFFF", lineHeight:1 }}>{score ?? "—"}</span>
+          <span style={{ fontSize:16, color:"#6B6B90" }}>/10</span>
+        </div>
+        {c.override_applied
+          ? tipBadge("rgba(245,158,11,0.18)", "#F59E0B", "Dominancia")
+          : scoreBadge(score)}
       </div>
+
+      {TIP_DIVIDER}
+
       {c.override_applied ? (() => {
         const winnerIsLoyalty = c.override_winner === "loyalty";
-        const fbDate = c.feedback_date ? new Date(c.feedback_date).toLocaleDateString("es-CL") : null;
-        const winnerLabel = winnerIsLoyalty ? "Loyalty (100%)" : `${c.feedback_source || "Feedback"} (100%)`;
-        const winnerValue = winnerIsLoyalty
-          ? (c.loyalty_value != null ? `L${c.loyalty_value} → ${c.loyalty_value*2}pts` : "—")
-          : (c.feedback_value != null ? `${c.feedback_value}pts` : "—");
-        const loserLeft = winnerIsLoyalty
-          ? [c.feedback_source, c.feedback_value != null ? `${c.feedback_value}/10` : null, fbDate].filter(Boolean).join(" ")
-          : (c.loyalty_value != null ? `Loyalty L${c.loyalty_value}` : "Loyalty");
+
+        const WinnerBlock = winnerIsLoyalty ? (
+          <div style={{ marginBottom:8 }}>
+            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:3 }}>
+              <span style={{ fontSize:12, color:"rgba(255,255,255,0.8)" }}>
+                ✓ Loyalty <span style={{ color:"#6B6B90", fontSize:11 }}>100%</span>
+              </span>
+              <span style={{ fontSize:20, fontWeight:700, color:"#22C48A" }}>
+                {loyPts ?? "—"}
+              </span>
+            </div>
+            <div style={{ fontSize:11, color:"#6B6B90" }}>
+              {c.loyalty_value != null ? `L${c.loyalty_value}` : ""}
+              {loyDateStr ? ` — actualizado ${loyDateStr}` : ""}
+            </div>
+          </div>
+        ) : (
+          <div style={{ marginBottom:8 }}>
+            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:3 }}>
+              <span style={{ fontSize:12, color:"rgba(255,255,255,0.8)" }}>
+                ✓ {c.feedback_source || "Feedback"} <span style={{ color:"#6B6B90", fontSize:11 }}>100%</span>
+              </span>
+              <span style={{ fontSize:20, fontWeight:700, color:"#22C48A" }}>
+                {c.feedback_value ?? "—"}
+              </span>
+            </div>
+            <div style={{ fontSize:11, color:"#6B6B90" }}>
+              {fbDateStr ? `Respondido ${fbDateStr}` : ""}
+            </div>
+          </div>
+        );
+
+        const LoserBlock = winnerIsLoyalty ? (
+          <div style={{ opacity:0.5, marginBottom:10 }}>
+            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:3 }}>
+              <span style={{ fontSize:12, color:"#EF4444", textDecoration:"line-through" }}>
+                ✗ {c.feedback_source || "Feedback"} ignorado
+              </span>
+              <span style={{ fontSize:20, fontWeight:700, color:"#EF4444", textDecoration:"line-through" }}>
+                {c.feedback_value != null ? `${c.feedback_value}/10` : "—"}
+              </span>
+            </div>
+            <div style={{ fontSize:11, color:"#6B6B90" }}>
+              {fbDateStr ? `Respondido ${fbDateStr}` : ""}
+            </div>
+          </div>
+        ) : (
+          <div style={{ opacity:0.5, marginBottom:10 }}>
+            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:3 }}>
+              <span style={{ fontSize:12, color:"#EF4444", textDecoration:"line-through" }}>
+                ✗ Loyalty ignorado
+              </span>
+              <span style={{ fontSize:20, fontWeight:700, color:"#EF4444", textDecoration:"line-through" }}>
+                {loyPts ?? "—"}
+              </span>
+            </div>
+            <div style={{ fontSize:11, color:"#6B6B90" }}>
+              {c.loyalty_value != null ? `L${c.loyalty_value}` : ""}
+              {loyDateStr ? ` — actualizado ${loyDateStr}` : ""}
+            </div>
+          </div>
+        );
+
         return (
-          <div style={{ display:"flex", flexDirection:"column", gap:7 }}>
-            <div style={{ fontWeight:600, color:"#F59E0B", fontSize:11, letterSpacing:0.3, paddingBottom:5, borderBottom:"1px solid rgba(255,255,255,0.1)" }}>
-              ⚡ Dominancia temporal activa
-            </div>
-            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
-              <span style={{ color:"#22C48A" }}>✓ {winnerLabel}</span>
-              <span style={{ fontWeight:500, color:"#FFFFFF" }}>{winnerValue}</span>
-            </div>
-            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", gap:8 }}>
-              <span style={{ color:"#EF4444" }}>✗ {loserLeft}</span>
-              <span style={{ color:"rgba(255,255,255,0.35)", fontSize:10, whiteSpace:"nowrap" }}>ignorado</span>
-            </div>
+          <>
+            {WinnerBlock}
+            {LoserBlock}
             {c.override_reason && (
-              <div style={{ marginTop:2, paddingTop:6, borderTop:"1px solid rgba(255,255,255,0.1)", fontSize:10, color:"rgba(255,255,255,0.5)", lineHeight:1.6, fontStyle:"italic" }}>
-                "{c.override_reason}"
+              <div style={{ background:"rgba(245,158,11,0.12)", border:"1px solid rgba(245,158,11,0.25)", borderRadius:8, padding:"8px 10px" }}>
+                <div style={{ fontSize:11, fontWeight:600, color:"#F59E0B", marginBottom:4 }}>⚡ Dominancia temporal activa</div>
+                <div style={{ fontSize:11, color:"#B0A070", lineHeight:1.5 }}>{c.override_reason}</div>
               </div>
             )}
-          </div>
+          </>
         );
       })() : (
         <>
-          <div style={{ display:"flex", flexDirection:"column", gap:6 }}>
-            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
-              <span style={{ color:"rgba(255,255,255,0.55)" }}>Loyalty <span style={{fontSize:10}}>(60%)</span></span>
-              <span style={{ fontWeight:500, color: hasLoy ? "#FFFFFF" : "rgba(255,255,255,0.25)" }}>
-                {hasLoy ? `L${c.loyalty_value} → ${c.loyalty_value*2}pts` : "—"}
+          {/* Loyalty block */}
+          <div style={{ marginBottom:8 }}>
+            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:3 }}>
+              <span style={{ fontSize:12, color:"rgba(255,255,255,0.7)" }}>
+                Loyalty <span style={{ color:"#6B6B90", fontSize:11 }}>60%</span>
+              </span>
+              <span style={{ fontSize:20, fontWeight:700, color: loyPts != null ? scoreColor(loyPts) : "#6B6B90" }}>
+                {loyPts ?? "—"}
               </span>
             </div>
-            {hasLoy && c.loyalty_reason && (
-              <div style={{ fontSize:10, color:"rgba(255,255,255,0.35)", marginTop:-4, paddingLeft:4 }}>
-                ↳ {c.loyalty_reason}
-              </div>
-            )}
-            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
-              <span style={{ color:"rgba(255,255,255,0.55)" }}>Feedback <span style={{fontSize:10}}>(40%)</span></span>
-              <span style={{ fontWeight:500, color: hasFb ? "#FFFFFF" : "rgba(255,255,255,0.25)" }}>
-                {hasFb ? `${c.feedback_value}pts` : "—"}
-              </span>
+            <div style={{ fontSize:11, color:"#6B6B90" }}>
+              {c.loyalty_value != null ? `L${c.loyalty_value}` : "Sin datos"}
+              {c.loyalty_reason ? ` — ${c.loyalty_reason}` : ""}
+              {loyDateStr ? ` — actualizado ${loyDateStr}` : ""}
             </div>
-            {hasFb && (c.feedback_source || c.feedback_date) && (
-              <div style={{ fontSize:10, color:"rgba(255,255,255,0.35)", marginTop:-4, paddingLeft:4 }}>
-                {c.feedback_source && `↳ Fuente: ${c.feedback_source}`}
-                {c.feedback_date && <span style={{ marginLeft:6 }}>· {new Date(c.feedback_date).toLocaleDateString("es-CL")}</span>}
-              </div>
-            )}
           </div>
-          <div style={{ marginTop:8, paddingTop:8, borderTop:"1px solid rgba(255,255,255,0.1)", fontSize:10, color:"rgba(255,255,255,0.3)", fontFamily:"'JetBrains Mono',monospace" }}>
-            Fórmula: Loyalty×2 × 0.6 + Feedback × 0.4
+          {/* Feedback block */}
+          <div>
+            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:3 }}>
+              <span style={{ fontSize:12, color:"rgba(255,255,255,0.7)" }}>
+                Feedback <span style={{ color:"#6B6B90", fontSize:11 }}>40%</span>
+              </span>
+              <span style={{ fontSize:20, fontWeight:700, color: c.feedback_value != null ? scoreColor(c.feedback_value) : "#6B6B90" }}>
+                {c.feedback_value ?? "—"}
+              </span>
+            </div>
+            <div style={{ fontSize:11, color:"#6B6B90" }}>
+              {c.feedback_source || "Sin fuente"}
+              {fbDateStr ? ` — respondido ${fbDateStr}` : ""}
+            </div>
           </div>
         </>
       )}
@@ -236,47 +321,82 @@ function IndexTooltip({ c }) {
 // ── Momentum tooltip content ─────────────────────────────────────
 function MomentumTooltip({ c }) {
   const hasMom = c.momentum_score != null;
-  const bar = (label, val, max, color) => {
-    const pct = val != null ? Math.min(Math.abs(val)/max*100, 100) : 0;
+
+  const momBadge = score => {
+    if (!score) return tipBadge("rgba(255,255,255,0.08)", "#6B6B90", "Sin datos");
+    if (score >= 4) return tipBadge("rgba(34,196,138,0.18)", "#22C48A", `${c.momentum_symbol} ${c.momentum_label}`);
+    if (score === 3) return tipBadge("rgba(91,91,246,0.18)", "#8B8BFF", `${c.momentum_symbol} ${c.momentum_label}`);
+    return tipBadge("rgba(239,68,68,0.18)", "#EF4444", `${c.momentum_symbol} ${c.momentum_label}`);
+  };
+
+  const barRow = (label, pct, displayVal) => {
+    const clampedPct = Math.min(Math.max(pct, 0), 100);
+    const fillColor = clampedPct >= 70 ? "#22C48A" : clampedPct >= 30 ? "#5B5BF6" : "#EF4444";
     return (
-      <div style={{ marginBottom: 6 }}>
-        <div style={{ display:"flex", justifyContent:"space-between", fontSize:11, marginBottom:2 }}>
-          <span style={{ color:"#9ca3af" }}>{label}</span>
-          <span style={{ fontFamily:"'JetBrains Mono',monospace", color: val != null ? "#e8d5b7" : "#4b5563", fontWeight:500 }}>
-            {val != null ? (typeof val === "number" ? (Number.isInteger(val) ? val : val.toFixed(1)) : val) : "—"}
-          </span>
+      <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:7 }}>
+        <span style={{ fontSize:12, color:"#9090B0", flex:"0 0 110px", whiteSpace:"nowrap" }}>{label}</span>
+        <div style={{ flex:"0 0 80px", height:4, background:"rgba(255,255,255,0.1)", borderRadius:2, overflow:"hidden" }}>
+          <div style={{ height:"100%", width:`${clampedPct}%`, background:fillColor, borderRadius:2 }}/>
         </div>
-        <div style={{ height:3, background:"#1a1a1a", borderRadius:2, overflow:"hidden" }}>
-          <div style={{ height:"100%", width:`${pct}%`, background:color, borderRadius:2 }}/>
-        </div>
+        <span style={{ fontSize:13, fontWeight:600, color:fillColor, textAlign:"right", flex:1 }}>{displayVal}</span>
       </div>
     );
   };
+
+  const daPct = c.days_active_30   != null ? (c.days_active_30 / 28) * 100 : 0;
+  const vaPct = c.variacion_pct    != null ? ((c.variacion_pct + 100) / 200) * 100 : 50;
+  const prPct = c.proyeccion_sobre_limite != null ? c.proyeccion_sobre_limite * 100 : 0;
+
+  const actividadOk = c.days_since_last_use === 0 || (c.days_since_last_use != null && c.days_since_last_use <= 14);
+  const actividadTxt = c.days_since_last_use === 0
+    ? "Activo hoy"
+    : c.days_since_last_use != null
+      ? `Sin actividad hace ${c.days_since_last_use} días`
+      : "Sin dato";
+
   return (
-    <div style={{ fontSize:12, color:"rgba(255,255,255,0.75)" }}>
-      <div style={{ fontWeight:500, color:"#FFFFFF", fontSize:13, marginBottom:8 }}>
-        MOMENTUM — {hasMom ? `${c.momentum_symbol} ${c.momentum_label}` : "Sin datos"}
-      </div>
-      {hasMom && (
-        <div style={{ marginBottom:6, fontFamily:"'JetBrains Mono',monospace", fontSize:11, color:"rgba(255,255,255,0.4)" }}>
-          Raw: {c.momentum_raw} → Score: {c.momentum_score}/5
+    <div style={{ fontSize:12, color:"#FFFFFF" }}>
+      {/* Header */}
+      <TIP_SECTION>MOMENTUM</TIP_SECTION>
+      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:4 }}>
+        <div style={{ display:"flex", alignItems:"baseline", gap:3 }}>
+          <span style={{ fontSize:28, fontWeight:700, color:"#FFFFFF", lineHeight:1 }}>{hasMom ? c.momentum_score : "—"}</span>
+          <span style={{ fontSize:16, color:"#6B6B90" }}>/5</span>
         </div>
-      )}
-      <div style={{ fontSize:10, color:"rgba(255,255,255,0.35)", marginBottom:6, textTransform:"uppercase", letterSpacing:"0.05em" }}>Señales de producto</div>
-      {bar("Días activos /30d", c.days_active_30, 28, "#3B82F6")}
-      {bar("Variación convos %", c.variacion_pct, 80, c.variacion_pct >= 0 ? "#22C48A" : "#F59E0B")}
-      {bar("Uso/Límite plan", c.proyeccion_sobre_limite, 1.2, "#5B5BF6")}
-      <div style={{ marginTop:6, fontSize:10, color:"rgba(255,255,255,0.35)", textTransform:"uppercase", letterSpacing:"0.05em", marginBottom:4 }}>Penalidades</div>
-      <div style={{ display:"flex", gap:12, fontSize:11 }}>
-        <span style={{ color: c.pago_rechazado ? "#EF4444" : "rgba(255,255,255,0.35)" }}>
-          {c.pago_rechazado ? "⚠ Pago rechazado (−65%)" : "✓ Pago OK"}
-        </span>
-        <span style={{ color: c.days_since_last_use != null && c.days_since_last_use > 14 ? "#F59E0B" : "rgba(255,255,255,0.35)" }}>
-          {c.days_since_last_use != null ? `${c.days_since_last_use}d sin usar` : "Sin dato"}
-        </span>
+        <div style={{ textAlign:"right" }}>
+          {momBadge(c.momentum_score)}
+          {hasMom && (
+            <div style={{ fontSize:11, color:"#6B6B90", marginTop:4 }}>raw {c.momentum_raw}</div>
+          )}
+        </div>
       </div>
-      <div style={{ marginTop:8, paddingTop:8, borderTop:"1px solid rgba(255,255,255,0.1)", fontSize:10, color:"rgba(255,255,255,0.3)", fontFamily:"'JetBrains Mono',monospace" }}>
-        base = DA×0.53 + VA×0.27 + PR×0.20 → × penalties
+
+      {TIP_DIVIDER}
+
+      {/* Señales de uso */}
+      <TIP_SECTION>Señales de uso</TIP_SECTION>
+      {barRow("Días activos /30d", daPct,
+        c.days_active_30 != null ? `${c.days_active_30}d` : "—")}
+      {barRow("Variación convos", vaPct,
+        c.variacion_pct != null ? `${c.variacion_pct > 0 ? "+" : ""}${c.variacion_pct}%` : "—")}
+      {barRow("Uso / límite plan", prPct,
+        c.proyeccion_sobre_limite != null ? `${(c.proyeccion_sobre_limite * 100).toFixed(0)}%` : "—")}
+
+      {TIP_DIVIDER}
+
+      {/* Penalidades */}
+      <TIP_SECTION>Penalidades</TIP_SECTION>
+      <div style={{ display:"flex", flexDirection:"column", gap:7 }}>
+        <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+          <span style={{ width:7, height:7, borderRadius:"50%", background: c.pago_rechazado ? "#EF4444" : "#22C48A", flexShrink:0 }}/>
+          <span style={{ fontSize:12, color: c.pago_rechazado ? "#EF4444" : "#22C48A" }}>
+            {c.pago_rechazado ? "Pago rechazado" : "Pago al día"}
+          </span>
+        </div>
+        <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+          <span style={{ width:7, height:7, borderRadius:"50%", background: actividadOk ? "#22C48A" : "#EF4444", flexShrink:0 }}/>
+          <span style={{ fontSize:12, color: actividadOk ? "#22C48A" : "#EF4444" }}>{actividadTxt}</span>
+        </div>
       </div>
     </div>
   );
@@ -285,23 +405,64 @@ function MomentumTooltip({ c }) {
 // ── Freshness tooltip content ────────────────────────────────────
 function FreshnessTooltip({ c }) {
   const f = c.freshness ? FRESH[c.freshness] : null;
+  const dias = c.freshness_days ?? null;
+  const barWidth = dias != null ? Math.min((dias / 90) * 100, 100) : 0;
+
+  const contextText = (() => {
+    if (!f) return "No hay datos de Index para evaluar frescura.";
+    if (c.freshness === "verde") return "Datos de Loyalty y Feedback actualizados recientemente.";
+    if (c.freshness === "amarillo") {
+      const src = c.feedback_source || "El dato";
+      return `${src} actualizado hace ${dias != null ? `${dias} días` : "más de 30 días"}. Considera actualizar el Index pronto.`;
+    }
+    return "Datos desactualizados. El Index puede no reflejar la situación actual del cliente.";
+  })();
+
   return (
-    <div style={{ fontSize:12, color:"rgba(255,255,255,0.75)" }}>
-      <div style={{ fontWeight:500, color:"#FFFFFF", fontSize:13, marginBottom:8 }}>
-        FRESHNESS — {f ? f.label : "Sin datos"}
+    <div style={{ fontSize:12, color:"#FFFFFF" }}>
+      {/* Header */}
+      <TIP_SECTION>FRESHNESS</TIP_SECTION>
+      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:2 }}>
+        <div>
+          <div style={{ display:"flex", alignItems:"baseline", gap:4 }}>
+            <span style={{ fontSize:32, fontWeight:700, color: f ? f.dot : "#6B6B90", lineHeight:1 }}>
+              {dias ?? "—"}
+            </span>
+          </div>
+          <div style={{ fontSize:13, color:"#9090B0", marginTop:2 }}>días desde última actualización</div>
+        </div>
+        {f && tipBadge(
+          c.freshness === "verde"    ? "rgba(34,196,138,0.18)"  :
+          c.freshness === "amarillo" ? "rgba(245,158,11,0.18)"  :
+                                       "rgba(239,68,68,0.18)",
+          f.dot, f.label
+        )}
       </div>
-      <p style={{ margin:"0 0 8px", fontSize:12, color:"rgba(255,255,255,0.55)", lineHeight:1.5 }}>
-        {f ? f.desc : "No hay datos de Index para evaluar frescura."}
-      </p>
-      <div style={{ fontSize:10, color:"rgba(255,255,255,0.35)", lineHeight:1.5 }}>
-        La frescura indica qué tan recientes son los datos de Loyalty y Feedback que componen el Index. Se mide desde la fecha más reciente entre ambos inputs.
+
+      {/* Progress bar */}
+      <div style={{ height:6, background:"rgba(255,255,255,0.08)", borderRadius:3, margin:"10px 0 6px", overflow:"hidden" }}>
+        <div style={{ height:"100%", width:`${barWidth}%`, background: f ? f.dot : "#6B6B90", borderRadius:3, transition:"width 0.4s ease" }}/>
       </div>
-      <div style={{ marginTop:8, display:"flex", gap:8 }}>
-        {Object.entries(FRESH).filter(([k])=>k!=="sin_fecha").map(([key, v]) => (
-          <span key={key} style={{ display:"inline-flex", alignItems:"center", gap:3, padding:"2px 6px", borderRadius:6, background: c.freshness===key ? "rgba(255,255,255,0.12)" : "transparent", fontSize:10, color: c.freshness===key ? "#FFFFFF" : "rgba(255,255,255,0.3)" }}>
-            <span style={{ width:6, height:6, borderRadius:"50%", background:v.dot }}/>
-            {v.label}
-          </span>
+      <div style={{ display:"flex", justifyContent:"space-between", fontSize:10, color:"#6B6B90", marginBottom:0 }}>
+        <span>0d</span><span>30d</span><span>60d</span><span>90d+</span>
+      </div>
+
+      {TIP_DIVIDER}
+
+      {/* Contextual text */}
+      <div style={{ fontSize:11, color:"#9090B0", lineHeight:1.5, marginBottom:12 }}>{contextText}</div>
+
+      {/* Legend */}
+      <div style={{ display:"flex", gap:12 }}>
+        {[
+          { dot:"#22C48A", label:"Fresco <30d" },
+          { dot:"#F59E0B", label:"Tibio 30–60d" },
+          { dot:"#EF4444", label:"Stale 60d+" },
+        ].map(({ dot, label }) => (
+          <div key={label} style={{ display:"flex", alignItems:"center", gap:5 }}>
+            <span style={{ width:7, height:7, borderRadius:"50%", background:dot, flexShrink:0 }}/>
+            <span style={{ fontSize:11, color:"#9090B0" }}>{label}</span>
+          </div>
         ))}
       </div>
     </div>
@@ -792,7 +953,7 @@ export default function HealthDashboard() {
                       {fmtCLP(c.mrr)}
                     </td>
                     <td style={{ ...S.td, textAlign:"center" }}>
-                      <Tooltip content={<IndexTooltip c={c}/>} width={260}>
+                      <Tooltip content={<IndexTooltip c={c}/>} width={280}>
                         <IndexDot value={c.index_score} overrideApplied={c.override_applied}/>
                       </Tooltip>
                     </td>
@@ -802,7 +963,7 @@ export default function HealthDashboard() {
                       </Tooltip>
                     </td>
                     <td style={{ ...S.td, textAlign:"center" }}>
-                      <Tooltip content={<MomentumTooltip c={c}/>} width={300}>
+                      <Tooltip content={<MomentumTooltip c={c}/>} width={280}>
                         <MomentumBadge score={c.momentum_score} symbol={c.momentum_symbol} label={c.momentum_label}/>
                       </Tooltip>
                     </td>
