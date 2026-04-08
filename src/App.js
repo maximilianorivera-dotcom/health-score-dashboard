@@ -584,61 +584,83 @@ function FreshBadge({ freshness }) {
 }
 
 // ── WA quality tooltip ──────────────────────────────────────────
+const WA_RATING_ORDER = { RED: 0, YELLOW: 1, GREEN: 2, UNKNOWN: 3 };
+const waRatingDot  = r => r === "RED" ? "#EF4444" : r === "YELLOW" ? "#F59E0B" : r === "GREEN" ? "#22C48A" : "#A0A0B0";
+const waRatingText = r => r === "RED" ? "#EF4444" : r === "YELLOW" ? "#F59E0B" : "#22C48A";
+
 function WATooltip({ c }) {
-  const rating = c.wa_quality_rating;
-  const ratingColor = rating === "RED" ? "#EF4444" : rating === "YELLOW" ? "#F59E0B" : "#22C48A";
-  const ratingBg    = rating === "RED" ? "rgba(239,68,68,0.18)" : rating === "YELLOW" ? "rgba(245,158,11,0.18)" : "rgba(34,196,138,0.18)";
-  const dateStr = c.wa_quality_date ? new Date(c.wa_quality_date).toLocaleDateString("es-CL") : null;
+  const phones = [...(c.wa_phones || [])].sort(
+    (a, b) => (WA_RATING_ORDER[a.quality_rating] ?? 3) - (WA_RATING_ORDER[b.quality_rating] ?? 3)
+  );
+
   return (
     <div style={{ fontSize:12, color:"#FFFFFF" }}>
       <TIP_SECTION>Calidad WhatsApp</TIP_SECTION>
-      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:4 }}>
-        <div style={{ display:"flex", alignItems:"baseline", gap:6 }}>
-          <span style={{ fontSize:24, fontWeight:700, color:ratingColor, lineHeight:1 }}>{rating ?? "—"}</span>
-          {c.wa_quality_score != null && (
-            <span style={{ fontSize:13, color:"#6B6B90" }}>score {c.wa_quality_score}</span>
-          )}
+      {phones.length === 0 ? (
+        <div style={{ fontSize:12, color:"#6B6B90" }}>Sin números registrados</div>
+      ) : (
+        <div style={{ display:"flex", flexDirection:"column" }}>
+          {phones.map((p, i) => {
+            const dateStr = p.wa_quality_date
+              ? new Date(p.wa_quality_date).toLocaleDateString("es-CL") : null;
+            return (
+              <div key={p.phone_id || i}>
+                {i > 0 && <div style={{ borderTop:"1px solid rgba(255,255,255,0.07)", margin:"8px 0" }}/>}
+                <div style={{ display:"flex", alignItems:"flex-start", gap:8 }}>
+                  <span style={{
+                    width:7, height:7, borderRadius:"50%", flexShrink:0, marginTop:3,
+                    background: waRatingDot(p.quality_rating),
+                  }}/>
+                  <div style={{ flex:1, minWidth:0 }}>
+                    <div style={{ fontSize:12, fontWeight:500, color:"#FFFFFF", marginBottom:1 }}>
+                      {p.verified_name || p.display_number}
+                    </div>
+                    {p.verified_name && (
+                      <div style={{ fontSize:11, color:"#6B6B90", marginBottom:4 }}>{p.display_number}</div>
+                    )}
+                    <div style={{ display:"flex", gap:8, alignItems:"center", flexWrap:"wrap" }}>
+                      <span style={{ fontSize:11, fontWeight:600, color: waRatingText(p.quality_rating) }}>
+                        {p.quality_rating}{p.quality_score != null ? ` · ${p.quality_score}` : ""}
+                      </span>
+                      {p.messaging_limit && (
+                        <span style={{ fontSize:10, color:"#9090B0" }}>{p.messaging_limit}</span>
+                      )}
+                      {p.phone_status && p.phone_status !== "CONNECTED" && (
+                        <span style={{ fontSize:10, color:"#EF4444" }}>{p.phone_status}</span>
+                      )}
+                      {dateStr && (
+                        <span style={{ fontSize:10, color:"#6B6B90" }}>{dateStr}</span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
         </div>
-        {rating && tipBadge(ratingBg, ratingColor, rating)}
-      </div>
-      {TIP_DIVIDER}
-      <div style={{ display:"flex", flexDirection:"column", gap:7 }}>
-        <div style={{ display:"flex", justifyContent:"space-between" }}>
-          <span style={{ fontSize:12, color:"#9090B0" }}>Estado teléfono</span>
-          <span style={{ fontSize:12, fontWeight:500, color: c.wa_phone_status === "FLAGGED" ? "#EF4444" : "#FFFFFF" }}>
-            {c.wa_phone_status ?? "—"}
-          </span>
-        </div>
-        <div style={{ display:"flex", justifyContent:"space-between" }}>
-          <span style={{ fontSize:12, color:"#9090B0" }}>Límite mensajería</span>
-          <span style={{ fontSize:12, fontWeight:500, color:"#FFFFFF" }}>{c.wa_messaging_limit ?? "—"}</span>
-        </div>
-        {dateStr && (
-          <div style={{ fontSize:11, color:"#6B6B90", marginTop:2 }}>Actualizado {dateStr}</div>
-        )}
-      </div>
+      )}
     </div>
   );
 }
 
 // ── WA quality badge ─────────────────────────────────────────────
 function WABadge({ c }) {
-  if (!c.wa_quality_rating) return null;
-  const styles = {
-    RED:    { bg:"#FEF2F2", color:"#991B1B", dot:"#EF4444" },
-    YELLOW: { bg:"#FFFBEB", color:"#92400E", dot:"#F59E0B" },
-    GREEN:  { bg:"#ECFDF5", color:"#065F46", dot:"#22C48A" },
+  if (!(c.wa_phones?.length > 0)) return null;
+  const STYLES = {
+    RED:    { bg:"#FEF2F2", color:"#991B1B", dot:"#EF4444",  label:"WA ✕" },
+    YELLOW: { bg:"#FFFBEB", color:"#92400E", dot:"#F59E0B",  label:"WA ⚠" },
+    GREEN:  { bg:"#ECFDF5", color:"#065F46", dot:"#22C48A",  label:"WA"   },
   };
-  const s = styles[c.wa_quality_rating] ?? styles.GREEN;
+  const s = STYLES[c.wa_quality_rating] ?? STYLES.GREEN;
   return (
-    <Tooltip content={<WATooltip c={c}/>} width={240}>
+    <Tooltip content={<WATooltip c={c}/>} width={260}>
       <span style={{
         display:"inline-flex", alignItems:"center", gap:3,
         padding:"2px 6px", borderRadius:6, fontSize:10, fontWeight:600,
         background: s.bg, color: s.color, cursor:"default",
       }}>
         <span style={{ width:5, height:5, borderRadius:"50%", background: s.dot, flexShrink:0 }}/>
-        WA
+        {s.label}
       </span>
     </Tooltip>
   );
