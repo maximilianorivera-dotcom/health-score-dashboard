@@ -586,7 +586,7 @@ function FreshBadge({ freshness }) {
 // ── WA quality tooltip ──────────────────────────────────────────
 const WA_RATING_ORDER = { RED: 0, YELLOW: 1, GREEN: 2, UNKNOWN: 3 };
 const waRatingDot  = r => r === "RED" ? "#EF4444" : r === "YELLOW" ? "#F59E0B" : r === "GREEN" ? "#22C48A" : "#A0A0B0";
-const waRatingText = r => r === "RED" ? "#EF4444" : r === "YELLOW" ? "#F59E0B" : "#22C48A";
+const waRatingText = r => r === "RED" ? "#EF4444" : r === "YELLOW" ? "#F59E0B" : r === "GREEN" ? "#22C48A" : "#A0A0B0";
 
 function WATooltip({ c }) {
   const phones = [...(c.wa_phones || [])].sort(
@@ -625,8 +625,10 @@ function WATooltip({ c }) {
                       {p.messaging_limit && (
                         <span style={{ fontSize:10, color:"#9090B0" }}>{p.messaging_limit}</span>
                       )}
-                      {p.phone_status && p.phone_status !== "CONNECTED" && (
-                        <span style={{ fontSize:10, color:"#EF4444" }}>{p.phone_status}</span>
+                      {p.phone_status && (
+                        <span style={{ fontSize:10, color: p.phone_status === "CONNECTED" ? "#9090B0" : "#EF4444" }}>
+                          {p.phone_status}
+                        </span>
                       )}
                       {dateStr && (
                         <span style={{ fontSize:10, color:"#6B6B90" }}>{dateStr}</span>
@@ -647,11 +649,12 @@ function WATooltip({ c }) {
 function WABadge({ c }) {
   if (!(c.wa_phones?.length > 0)) return null;
   const STYLES = {
-    RED:    { bg:"#FEF2F2", color:"#991B1B", dot:"#EF4444",  label:"WA ✕" },
-    YELLOW: { bg:"#FFFBEB", color:"#92400E", dot:"#F59E0B",  label:"WA ⚠" },
-    GREEN:  { bg:"#ECFDF5", color:"#065F46", dot:"#22C48A",  label:"WA"   },
+    RED:     { bg:"#FEF2F2", color:"#991B1B", dot:"#EF4444", label:"WA ✕" },
+    YELLOW:  { bg:"#FFFBEB", color:"#92400E", dot:"#F59E0B", label:"WA ⚠" },
+    GREEN:   { bg:"#ECFDF5", color:"#065F46", dot:"#22C48A", label:"WA"   },
+    UNKNOWN: { bg:"#F4F4F6", color:"#7A7A8C", dot:"#A0A0B0", label:"WA ?" },
   };
-  const s = STYLES[c.wa_quality_rating] ?? STYLES.GREEN;
+  const s = STYLES[c.wa_quality_rating] ?? STYLES.UNKNOWN;
   return (
     <Tooltip content={<WATooltip c={c}/>} width={260}>
       <span style={{
