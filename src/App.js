@@ -623,18 +623,21 @@ function WATooltip({ c }) {
 
 // ── WA quality badge ─────────────────────────────────────────────
 function WABadge({ c }) {
-  if (!c.wa_quality_alert) return null;
-  const isRed = c.wa_quality_rating === "RED";
+  if (!c.wa_quality_rating) return null;
+  const styles = {
+    RED:    { bg:"#FEF2F2", color:"#991B1B", dot:"#EF4444" },
+    YELLOW: { bg:"#FFFBEB", color:"#92400E", dot:"#F59E0B" },
+    GREEN:  { bg:"#ECFDF5", color:"#065F46", dot:"#22C48A" },
+  };
+  const s = styles[c.wa_quality_rating] ?? styles.GREEN;
   return (
     <Tooltip content={<WATooltip c={c}/>} width={240}>
       <span style={{
         display:"inline-flex", alignItems:"center", gap:3,
         padding:"2px 6px", borderRadius:6, fontSize:10, fontWeight:600,
-        background: isRed ? "#FEF2F2" : "#FFFBEB",
-        color: isRed ? "#991B1B" : "#92400E",
-        cursor:"default",
+        background: s.bg, color: s.color, cursor:"default",
       }}>
-        <span style={{ width:5, height:5, borderRadius:"50%", background: isRed ? "#EF4444" : "#F59E0B", flexShrink:0 }}/>
+        <span style={{ width:5, height:5, borderRadius:"50%", background: s.dot, flexShrink:0 }}/>
         WA
       </span>
     </Tooltip>
