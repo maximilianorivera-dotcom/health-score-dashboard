@@ -583,6 +583,64 @@ function FreshBadge({ freshness }) {
   );
 }
 
+// ── WA quality tooltip ──────────────────────────────────────────
+function WATooltip({ c }) {
+  const rating = c.wa_quality_rating;
+  const ratingColor = rating === "RED" ? "#EF4444" : rating === "YELLOW" ? "#F59E0B" : "#22C48A";
+  const ratingBg    = rating === "RED" ? "rgba(239,68,68,0.18)" : rating === "YELLOW" ? "rgba(245,158,11,0.18)" : "rgba(34,196,138,0.18)";
+  const dateStr = c.wa_quality_date ? new Date(c.wa_quality_date).toLocaleDateString("es-CL") : null;
+  return (
+    <div style={{ fontSize:12, color:"#FFFFFF" }}>
+      <TIP_SECTION>Calidad WhatsApp</TIP_SECTION>
+      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:4 }}>
+        <div style={{ display:"flex", alignItems:"baseline", gap:6 }}>
+          <span style={{ fontSize:24, fontWeight:700, color:ratingColor, lineHeight:1 }}>{rating ?? "—"}</span>
+          {c.wa_quality_score != null && (
+            <span style={{ fontSize:13, color:"#6B6B90" }}>score {c.wa_quality_score}</span>
+          )}
+        </div>
+        {rating && tipBadge(ratingBg, ratingColor, rating)}
+      </div>
+      {TIP_DIVIDER}
+      <div style={{ display:"flex", flexDirection:"column", gap:7 }}>
+        <div style={{ display:"flex", justifyContent:"space-between" }}>
+          <span style={{ fontSize:12, color:"#9090B0" }}>Estado teléfono</span>
+          <span style={{ fontSize:12, fontWeight:500, color: c.wa_phone_status === "FLAGGED" ? "#EF4444" : "#FFFFFF" }}>
+            {c.wa_phone_status ?? "—"}
+          </span>
+        </div>
+        <div style={{ display:"flex", justifyContent:"space-between" }}>
+          <span style={{ fontSize:12, color:"#9090B0" }}>Límite mensajería</span>
+          <span style={{ fontSize:12, fontWeight:500, color:"#FFFFFF" }}>{c.wa_messaging_limit ?? "—"}</span>
+        </div>
+        {dateStr && (
+          <div style={{ fontSize:11, color:"#6B6B90", marginTop:2 }}>Actualizado {dateStr}</div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ── WA quality badge ─────────────────────────────────────────────
+function WABadge({ c }) {
+  if (!c.wa_quality_alert) return null;
+  const isRed = c.wa_quality_rating === "RED";
+  return (
+    <Tooltip content={<WATooltip c={c}/>} width={240}>
+      <span style={{
+        display:"inline-flex", alignItems:"center", gap:3,
+        padding:"2px 6px", borderRadius:6, fontSize:10, fontWeight:600,
+        background: isRed ? "#FEF2F2" : "#FFFBEB",
+        color: isRed ? "#991B1B" : "#92400E",
+        cursor:"default",
+      }}>
+        <span style={{ width:5, height:5, borderRadius:"50%", background: isRed ? "#EF4444" : "#F59E0B", flexShrink:0 }}/>
+        WA
+      </span>
+    </Tooltip>
+  );
+}
+
 // ══════════════════════════════════════════════════════════════════
 //  MAIN DASHBOARD
 // ══════════════════════════════════════════════════════════════════
@@ -595,6 +653,7 @@ export default function HealthDashboard() {
   const [sortKeys, setSortKeys] = useState([{ key:"mrr", dir:"desc" }]);
   const [search, setSearch] = useState("");
   const [sizeFilter, setSizeFilter] = useState("all");
+  const [waFilter, setWaFilter] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -651,6 +710,7 @@ export default function HealthDashboard() {
   const clients = useMemo(() => {
     let list = data.filter(c => (c.csm || "Sin asignar") === selectedCSM);
     if (sizeFilter !== "all") list = list.filter(c => (c.client_size || "M") === sizeFilter);
+    if (waFilter) list = list.filter(c => c.wa_quality_alert === true);
     if (search) {
       const q = search.toLowerCase();
       list = list.filter(c => (c.client_name||"").toLowerCase().includes(q) || (c.email||"").toLowerCase().includes(q));
@@ -679,7 +739,7 @@ export default function HealthDashboard() {
       return 0;
     });
     return list;
-  }, [data, selectedCSM, search, sortKeys, sizeFilter]);
+  }, [data, selectedCSM, search, sortKeys, sizeFilter, waFilter]);
 
   const teamStats = useMemo(() => {
     const withIdx = data.filter(c => c.index_score != null);
@@ -733,6 +793,7 @@ export default function HealthDashboard() {
       avgIndex: withIdx.length ? Math.round(withIdx.reduce((s,c) => s+c.index_score, 0)/withIdx.length*10)/10 : null,
       avgMom: withMom.length ? Math.round(withMom.reduce((s,c) => s+c.momentum_score, 0)/withMom.length*10)/10 : null,
       critical: list.filter(c => (c.index_score != null && c.index_score <= 4) || (c.momentum_score != null && c.momentum_score <= 1)).length,
+      waAlerts: list.filter(c => c.wa_quality_alert === true).length,
     };
   }, [data, selectedCSM, sizeFilter]);
 
@@ -956,6 +1017,7 @@ export default function HealthDashboard() {
                 { label:"Avg Index",    value: csmStats.avgIndex != null ? csmStats.avgIndex+"/10" : "—", color:"#5B5BF6" },
                 { label:"Avg Momentum", value: csmStats.avgMom != null ? csmStats.avgMom+"/5" : "—",      color:"#3B82F6" },
                 { label:"Críticos",     value: csmStats.critical, color: csmStats.critical > 0 ? "#EF4444" : "#22C48A" },
+                { label:"Alertas WA",   value: csmStats.waAlerts, color: csmStats.waAlerts  > 0 ? "#F59E0B" : "#22C48A" },
               ].map(kpi => (
                 <div key={kpi.label} style={S.kpi}>
                   <div style={{ fontSize:11, color:"#A0A0B0", textTransform:"uppercase", letterSpacing:"0.05em", fontWeight:500 }}>{kpi.label}</div>
@@ -965,7 +1027,7 @@ export default function HealthDashboard() {
             </div>
           </header>
 
-          {/* Search + Size filter */}
+          {/* Search + Size filter + WA filter */}
           <div style={{ marginBottom:16, display:"flex", alignItems:"center", gap:12, flexWrap:"wrap" }}>
             <input type="text" placeholder="Buscar cliente…" value={search} onChange={e => setSearch(e.target.value)} style={S.search}/>
             <div style={{ display:"flex", gap:4 }}>
@@ -981,6 +1043,12 @@ export default function HealthDashboard() {
                 );
               })}
             </div>
+            <button onClick={() => setWaFilter(v => !v)} style={{
+              padding:"4px 14px", borderRadius:20, border: waFilter ? "none" : "1px solid #E5E5E8",
+              background: waFilter ? "#F59E0B" : "transparent", color: waFilter ? "#FFFFFF" : "#7A7A8C",
+              fontSize:12, fontWeight:500, cursor:"pointer", fontFamily:"inherit",
+              transition:"all 0.15s",
+            }}>WA ⚠</button>
           </div>
 
           {/* Table */}
@@ -1024,9 +1092,12 @@ export default function HealthDashboard() {
                       </Tooltip>
                     </td>
                     <td style={{ ...S.td, textAlign:"center" }}>
-                      <Tooltip content={<MomentumTooltip c={c}/>} width={280}>
-                        <MomentumBadge score={c.momentum_score} symbol={c.momentum_symbol} label={c.momentum_label}/>
-                      </Tooltip>
+                      <div style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:4 }}>
+                        <Tooltip content={<MomentumTooltip c={c}/>} width={280}>
+                          <MomentumBadge score={c.momentum_score} symbol={c.momentum_symbol} label={c.momentum_label}/>
+                        </Tooltip>
+                        <WABadge c={c}/>
+                      </div>
                     </td>
                   </tr>
                 ))}
